@@ -1,0 +1,7 @@
+name = "Yagami"
+uuid = "6c1512a5-7034-4c39-b54a-f9774b92869c"
+authors = ["Marco <m1menari@eng.ucsd.edu> and contributors"]
+version = "0.1.0-DEV"
+
+[compat]
+julia = "1.11"
