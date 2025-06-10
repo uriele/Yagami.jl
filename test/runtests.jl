@@ -2,6 +2,8 @@ using Yagami
 using Test
 using Aqua
 using JET
+include("MaterialProperties/ciddor_consistency.jl")
+include("MaterialProperties/mathar_consistency.jl")
 
 @testset "Yagami.jl" begin
     @testset "Code quality (Aqua.jl)" begin

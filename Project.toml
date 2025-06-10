@@ -1,7 +1,25 @@
-name = "Yagami"
+name = "Yagami.jl"
 uuid = "6c1512a5-7034-4c39-b54a-f9774b92869c"
 authors = ["Marco <m1menari@eng.ucsd.edu> and contributors"]
 version = "0.1.0-DEV"
 
+[deps]
+CoordRefSystems = "b46f11dc-f210-4604-bfba-323c1ec968cb"
+FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
+HITRAN = "4efdbe67-70aa-4c87-84c0-bc59a9addc1a"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Moshi = "2e0e35c7-a2e4-4343-998d-7ef72827ed2d"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
 [compat]
+CoordRefSystems = "0.17.7"
+FastGaussQuadrature = "1.0.2"
+HITRAN = "0.2.15"
+LinearAlgebra = "1.11.0"
+Moshi = "0.3.5"
+StaticArrays = "1.9.13"
+StructArrays = "0.7.1"
+Unitful = "1.23.0"
 julia = "1.11"

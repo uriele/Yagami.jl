@@ -1,6 +1,10 @@
 *.jl.*.cov
 *.jl.cov
 *.jl.mem
+*.csv
+__*.jl
+/_*/
 /Manifest*.toml
 /docs/Manifest*.toml
 /docs/build/
+ciddor_results.csv
