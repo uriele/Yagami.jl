@@ -73,9 +73,3 @@ end
       $(SETDATUM...)
     return nothing
 end
-
-
-sqrt(1-ECCENTRICITY²())*MAJORAXIS()≈MINORAXIS()
-MAJORAXIS()≈WGS84MAJORAXIS
-setmajoraxis!(700.)
-setdatum!()

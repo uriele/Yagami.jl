@@ -1,24 +1,42 @@
-name = "Yagami.jl"
+name = "Yagami"
 uuid = "6c1512a5-7034-4c39-b54a-f9774b92869c"
 authors = ["Marco <m1menari@eng.ucsd.edu> and contributors"]
 version = "0.1.0-DEV"
 
 [deps]
 CoordRefSystems = "b46f11dc-f210-4604-bfba-323c1ec968cb"
+DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
+Geodesy = "0ef565a4-170c-5f04-8de2-149903a85f3d"
 HITRAN = "4efdbe67-70aa-4c87-84c0-bc59a9addc1a"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Moshi = "2e0e35c7-a2e4-4343-998d-7ef72827ed2d"
+NaturalNeighbours = "f16ad982-4edb-46b1-8125-78e5a8b5a9e6"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
+[weakdeps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+MakieExtra = "54e234d5-9986-40d8-815f-a5e42de435f6"
+WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
+
+[extensions]
+MakieExt = ["Makie", "WGLMakie", "CairoMakie", "MakieExtra"]
+
 [compat]
 CoordRefSystems = "0.17.7"
+DocStringExtensions = "0.9.5"
 FastGaussQuadrature = "1.0.2"
+Geodesy = "1.1.0"
 HITRAN = "0.2.15"
 LinearAlgebra = "1.11.0"
+MakieExtra = "0.1.54"
 Moshi = "0.3.5"
+NaturalNeighbours = "1.3.6"
+PyCall = "1.96.4"
 StaticArrays = "1.9.13"
 StructArrays = "0.7.1"
 Unitful = "1.23.0"

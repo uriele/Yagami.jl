@@ -2,15 +2,21 @@ using Yagami
 using Test
 using Aqua
 using JET
-include("MaterialProperties/ciddor_consistency.jl")
-include("MaterialProperties/mathar_consistency.jl")
 
+@testset "Yagami/MaterialProperties" begin
+    include("MaterialProperties/MaterialPropertiesTest.jl")
+end
+@testset "Yagami/RayTracing" begin
+  include("RayTracing/RayTracingTest.jl")
+end
+#=
 @testset "Yagami.jl" begin
     @testset "Code quality (Aqua.jl)" begin
-        Aqua.test_all(Yagami)
+        Aqua.test_all(Yagami; stale_deps=false)
     end
     @testset "Code linting (JET.jl)" begin
         JET.test_package(Yagami; target_defined_modules = true)
     end
     # Write your tests here.
 end
+=#

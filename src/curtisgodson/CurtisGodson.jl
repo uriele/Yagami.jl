@@ -1,4 +1,6 @@
 module CurtisGodson
-using LinearAlgebra,StructArrays,FastGaussQuadrature
-
+  using DocStringExtensions
+  using LinearAlgebra,StructArrays,FastGaussQuadrature
+  include("quadraturepoints.jl")
+  export QuadraturePoints, get_quadrature_points, linintegral
 end

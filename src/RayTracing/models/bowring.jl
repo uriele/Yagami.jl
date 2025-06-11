@@ -1,34 +1,38 @@
-
-# create bowring approximation for geodetic coordinates
 begin
+ # create bowring approximation for geodetic coordinat
   ##########################################################################################################################################
   local name=:bowring
-  local return_angle = Expr[:(mod1(atand(Num,Den*ang_sign),360))]
-  local return_altitude = Expr[:(tau2=tau*tau), :((W+Z*tau-c5*sqrt(1+c2*tau*tau))/sqrt(1+tau*tau))]
-  local return_altitudeangle = Expr[ :(tau2=tau*tau), :((W+Z*tau-c5*sqrt(1+c2*tau*tau))/sqrt(1+tau*tau),mod1(atand(Num,Den*ang_sign),360))]
+  local return_angle = Expr[ BOWRING_RETURN_ANGLE]
+  local return_altitude = Expr[ BOWRING_RETURN_ALTITUDE]
+  local return_altitudeangle = Expr[ BOWRING_RETURN_ALTITUDEANGLE]
   ##########################################################################################################################################
   local RETURNTHIS = (return_angle, return_altitude, return_altitudeangle)
   for (what,out,ret,safe) in zip(RETURNWHAT,OUTTYPE,RETURNTHIS,SAFERETURN)
-    fun = Symbol("ray2_",name,what)
-    @inline @eval  function $fun(W::T,Z::T)::$(out) where T<:AbstractFloat
+    inlinefun = Symbol("__",what,"_",name)
+    @eval @inline function $inlinefun(W::T,Z::T,_MAJORAXIS::T,_MINORAXIS::T,_COMPLECCENTRICITY²::T)::$(out) where T<:AbstractFloat
         $(Expr(:block, safe...))
-        ang_sign= sign(W)
-        c2 =COMPLEMENTECCENTRICITY²(T)
-        c1 = 1/c2
-        c3 = c1*c1
-        c4 = MAJORAXIS(T) * (1 - c2)
-        c5 = MAJORAXIS(T)
-
-        W= abs(W)
-        W2   = W*W
-        Z2= Z*Z
-
-        K    = W2+c1*Z2
-        L    = c4/(K*sqrt(K))
-        Num  = Z + c3*Z2*Z*L
-        Den  = W - W2*W*L
-        tau  = Num / Den
+        $(Expr(:block, BOWRING_MAIN_BODY...))
         $(Expr(:block, ret...))
     end
-    @inline @eval $fun(args) = $fun(args...)
+
+    # main function for the fukushima model
+    fun = Symbol("ray2",what,"_",name)
+    @inline @eval  function $fun(W::T,Z::T)::$(out) where T<:AbstractFloat
+        _MAJORAXIS = MAJORAXIS(T)
+        _MINORAXIS = MINORAXIS(T)
+        _COMPLECCENTRICITY² = COMPLECCENTRICITY²(T)
+        $inlinefun(W,Z,_MAJORAXIS,_MINORAXIS,_COMPLECCENTRICITY²)
+    end
+
+
+    # verbose version for plotting and debugging
+    fun_verbose = Symbol("ray2",what,"_",name,"_verbose")
+    @eval  function $fun_verbose(W::T,Z::T,a::T=WGS84MAJORAXIS,b::T=WGS84MINORAXIS)::$(out) where T<:AbstractFloat
+        _COMPLECCENTRICITY²=b^2/a^2
+        $inlinefun(W,Z,a,b,_COMPLECCENTRICITY²)
+    end
+
+    @eval $fun(args) = $fun(args...)
+    @eval $fun_verbose(args) = $fun_verbose(args...)
   end
+end

@@ -1,6 +1,7 @@
 
 # Interface for Ciddor's refractive index model
-refractive_index!(::Ciddor, n::A, temperature::A, pressure::A, wavelength::A, humidity::A, CO2ppm::A) where {T<:AbstractFloat,A<:AbstractArray{T}} =
+refractive_index!(::Ciddor, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T},
+   wavelength::AbstractArray{T}, humidity::AbstractArray{T}, CO2ppm::AbstractArray{T}) where {T<:AbstractFloat} =
   ciddor_refractive_index!(n, temperature, pressure, wavelength, humidity, CO2ppm)
 refractive_index(::Ciddor, temperature::T, pressure::T, wavelength::T, humidity::T, CO2ppm::T) where T<:AbstractFloat =
 ciddor_refractive_index(temperature, pressure, wavelength, humidity, CO2ppm)
@@ -8,11 +9,11 @@ ciddor_refractive_index(temperature, pressure, wavelength, humidity, CO2ppm)
 
 
 # Direct call to Ciddor's refractive index model
-function ciddor_refractive_index!(n::A,temperature::A, pressure::A, wavelength::A, humidity::A, CO2ppm::A) where {T<:AbstractFloat,A<:AbstractArray{T}}
+function ciddor_refractive_index!(n::AbstractArray{T},temperature::AbstractArray{T}, pressure::AbstractArray{T},
+  wavelength::AbstractArray{T}, humidity::AbstractArray{T}, CO2ppm::AbstractArray{T}) where {T<:AbstractFloat}
   @simd for i in eachindex(n)
     @inbounds n[i] = __refractive_index_ciddor(temperature[i], pressure[i], wavelength[i], humidity[i], CO2ppm[i])
   end
-  return n
 end
 
 ciddor_refractive_index(temperature::T, pressure::T, wavelength::T, humidity::T, CO2ppm::T) where T<:AbstractFloat  = __refractive_index_ciddor(temperature, pressure, wavelength, humidity, CO2ppm)
@@ -80,7 +81,7 @@ const CIDREF_RHOWV = __density_ciddor(CIDREF_TEMPERATUREWATERKELVIN, CIDREF_PRES
   nws = 1+CID_WVCORRECTING*(CID_W0+σ²*(CID_W1 + σ²*(CID_W2 + CID_W3*σ²))) #
 
   # molar mass of dry air, kg/mol
-  Ma = T(1e-3)*(+CIDREF_MOLARMASSCO2*(co2ppm-CIDREF_MOLARMASSC02PPM)) # only one that is not a constant but depends on co2ppm
+  Ma = T(1e-3)*(CIDREF_MOLARMASSAIR+CIDREF_MOLARMASSCO2*(co2ppm-CIDREF_MOLARMASSC02PPM)) # only one that is not a constant but depends on co2ppm
   # molar mass of water vapor, kg/mol
   Mw = CIDREF_MOLARMASSW # it is a constant but I put it here for clarity
   Za = CIDREF_ZAIR # compressibility of dry air at standard conditions (15°C and 101325 Pa) 0% humidity

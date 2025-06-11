@@ -1,5 +1,5 @@
 using StaticArrays
-const CURRENTMATERIALMODEL = ("Cidor","Mathar")
+const CURRENTAirModel = ("Ciddor","Mathar")
 ############################################################################################
 # CONSTANTS FOR CONVERSION
 ############################################################################################# TEMPERATURE CONVERSIONS
@@ -12,7 +12,7 @@ const CONVERSIONPASCALTOATM::Float64    = convert(Float64,ustrip(uconvert(atm,1*
 
 const CONVERSIONHPATOPASCAL::Float64     = 1/CONVERSIONPASCALTOHPA # Pa
 const CONVERSIONMBARTOPASCAL::Float64    = 1/CONVERSIONPASCALTOMBAR # Pa
-const CONVERSIONATMTOMBAR::Float64       = 1/CONVERSIONPASCALTOATM # Pa
+const CONVERSIONATMTOPASCAL::Float64       = 1/CONVERSIONPASCALTOATM # Pa
 
 const CONVERSIONCMTOμM::Float64 = convert(Float64,ustrip(uconvert(u"μm",1*u"cm"))) # cm
 const CONVERSIONμMTOCM::Float64 = 1/CONVERSIONCMTOμM # μm
@@ -78,11 +78,11 @@ const CARLOTTIREF_PRESSTEMP=288.16/101325       # K/Pa if multiplied by P/T stan
 const MATREF_T = 273.15+17.5 # K
 const MATREF_P = 75000       # Pa
 const MATREF_H = 10.0 # % relative humidity
+const MATHARRANGES = ("013_025","028_042","043_052","075_141","160_240")
 #########################################################################################################################
 # M013_025  valid in the range of 1.3μm - 2.5μm
 #########################################################################################################################cref = [ 0.200192e-3,  0.113474e-9,  -0.424595e-14,  0.100957e-16, -0.293315e-20,  0.307228e-24] # cm^j
 const M013_025REFC = [ 0.200192e-3,  0.113474e-9,  -0.424595e-14,  0.100957e-16, -0.293315e-20,  0.307228e-24] # cm^j
-
 const M013_025CT   = [ 0.588625e-1, -0.385766e-7,   0.888019e-10, -0.567650e-13,  0.166615e-16, -0.174845e-20] # cm^j · K
 const M013_025CTT  = [-3.01513,      0.406167e-3,  -0.514544e-6,   0.343161e-9,  -0.101189e-12,  0.106749e-16] # cm^j · K^2
 const M013_025CH   = [-0.103945e-7,  0.136858e-11, -0.171039e-14,  0.112908e-17, -0.329925e-21,  0.344747e-25] # cm^j · %^-1
@@ -92,6 +92,7 @@ const M013_025CPP  = [ 0.609186e-17, 0.519024e-23, -0.419477e-27,  0.434120e-30,
 const M013_025CTH  = [ 0.497859e-4, -0.661752e-8,   0.832034e-11, -0.551793e-14,  0.161899e-17, -0.169901e-21] # cm^j · K · %^-1
 const M013_025CTP  = [ 0.779176e-6,  0.396499e-12,  0.395114e-16,  0.233587e-20, -0.636441e-24,  0.716868e-28] # cm^j · K · Pa^-1
 const M013_025CHP  = [-0.206567e-15, 0.106141e-20, -0.149982e-23,  0.984046e-27, -0.288266e-30,  0.299105e-34] # cm^j · %^-1 · Pa^-1
+
 # reference wavelength,
 const M013_025REFσ = CONVERSIONCMTOμM/2.25    # cm^−1
 #########################################################################################################################
@@ -128,7 +129,7 @@ const M043_052REFσ = CONVERSIONCMTOμM/4.8    # cm^−1
 #########################################################################################################################
 # M075_141  valid in the range of 7.5μm - 14.1μm  % independent of CO2 concentration
 #########################################################################################################################
-const M75_141REFC = @SVector [ 0.199885e-3,  0.344739e-9,  -0.273714e-12,  0.393383e-15, -0.569488e-17,  0.164556e-19] # cm^j
+const M075_141REFC = @SVector [ 0.199885e-3,  0.344739e-9,  -0.273714e-12,  0.393383e-15, -0.569488e-17,  0.164556e-19] # cm^j
 const M075_141CT         = @SVector [ 0.593900e-1, -0.172226e-5,   0.237654e-8,  -0.381812e-11,  0.305050e-14, -0.157464e-16] # cm^j · K
 const M075_141CTT        = @SVector [-6.50355,      0.103830e-1,  -0.139464e-4,   0.220077e-7,  -0.272412e-10,  0.126364e-12] # cm^j · K^2
 const M075_141CH         = @SVector  [-0.221938e-7,  0.347377e-10, -0.465991e-13,  0.735848e-16, -0.897119e-19,  0.380817e-21] # cm^j · %^-1

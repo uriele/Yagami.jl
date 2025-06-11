@@ -18,7 +18,7 @@ end
 for fromto in ("atm","hpa","mbar")
   fun_from = Symbol(fromto, "_to_", :pascal)
   fun_to   = Symbol(:pascal, "_to_", fromto)
-  fun_from! = Symbol(fun_to, "!")
+  fun_from! = Symbol(fun_from, "!")
   fun_to! = Symbol(fun_to, "!")
   CONVERSIONTOPASCAL = Symbol("CONVERSION", uppercase(fromto), "TOPASCAL")
   CONVERSIONFROMPASCAL = Symbol("CONVERSION", "PASCALTO", uppercase(fromto))
