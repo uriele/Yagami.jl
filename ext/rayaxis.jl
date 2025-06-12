@@ -3,7 +3,7 @@ using Makie.MakieCore
 using GeometryBasics
 using Geodesy: Ellipsoid # for the ellipsoid definition easier that dealing with it manually
 using Yagami
-using Yagami.RayTracing.
+using Yagami.RayTracing.ray2_altitudeangle_fukushima  # used for the inverse transform
 # bring in missing Makie methods required for block definition
 using Makie: make_block_docstring
 const Rect2d = Rect2{Float64}
