@@ -9,7 +9,11 @@ include("grid/atmospheresetting.jl")
 include("constants.jl")
 include("models/fukushima.jl")
 include("models/bowring.jl")
+include("grid/interpolation.jl")
 include("tracing/fastmarchingintersection.jl")
+
+
+export AtmInterpolate, BiLinear, LogLinear
 
 export create_atmosphere, create_hlevelset,create_radii
 for model in EXISTINGMODELS
