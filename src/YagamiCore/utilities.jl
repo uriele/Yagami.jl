@@ -10,10 +10,7 @@ end
 
 # setdatum! function to set the datum parameters
 @eval function setdatum!(datum::Datum=WGS84Latest)::Nothing where Datum
-    if datum ∉ subtypes(Datum)
-      @warn("Invalid datum type: $datum. Using current parameterization.")
-      return nothing
-    end
+
      _EARTH = ellipsoid(datum)
 
     _MAJORAXIS = majoraxis(_EARTH) |> er-> uconvert(km,er) |> ustrip

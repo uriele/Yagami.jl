@@ -5,9 +5,10 @@ using GeometryBasics
 using Yagami.MaterialProperties: celsius_to_kelvin,atm_to_pascal,kelvin_to_celsius
 
 using Yagami.RayTracing:__geth, __getθ
-include("testutils.jl")
 
-
+@testset "Ray Data Structures" begin
+  include("tracingtest.jl")
+end
 @testset "Atmosphere Interpolation" begin
   include("interpolationtest.jl")
 end

@@ -75,3 +75,7 @@ const FUKUSHIMA_RETURN_ALTITUDEANGLE = Expr[
 ############################################################################################
 
 const EXISTINGMODELS = (:fukushima, :bowring)
+
+
+# Constants for the Earth approximations
+const EXPFUNC = (:getpoint,:getdirection, :getwedgeindex, :getlength, :getaltitude, :getazimuth)

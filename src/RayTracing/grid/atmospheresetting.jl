@@ -161,11 +161,11 @@ Create an atmosphere setting for ray tracing. This function generates an `Atmosp
   hᵢ::AbstractVector{T},
   temperatureᵢ::AbstractMatrix{T},
   pressureᵢ::AbstractMatrix{T},
-  humidity=0.0,
-  co2ppm=0.0,
-  wavelength=10.0,
-  knots_θ::AbstractVector{T}=create_hlevelset(T;),
-  knots_h::AbstractVector{T}=create_radii(T;),
+  humidity::T=0.0,
+  co2ppm::T=0.0,
+  wavelength::T=10.0,
+  knots_θ::AbstractVector{T}=create_hlevelset(),
+  knots_h::AbstractVector{T}=create_radii(),
 ) where {T<:Real}
 
   expr = Expr[]
@@ -219,7 +219,7 @@ Create an atmosphere setting for ray tracing. This function generates an `Atmosp
 end
 
 
-function grid_refractiveindex(model::AM,mean::MT,atm::AtmosphereSetting{N,M,T}) where {N,M,T<:Real,AM<:AirModel,MT<:MeanType}
+function grid_refractiveindex(model::AM,mean::MT,atm::AtmosphereSetting{N,M,T}) where {N,M,T<:Real,AM,MT}
   @info "Using model $(model) to compute refractive index for atmosphere setting with $(N) levels and $(M) radii."
   @info "Mean type: $(mean)"
   n= similar(getfield(atm.temperature,:A),N,M-1)
@@ -260,10 +260,7 @@ function grid_refractiveindex(model::AM,mean::MT,atm::AtmosphereSetting{N,M,T}) 
       hum_mean = __mean(mean, topleft_hum, topright_hum, bottomleft_hum, bottomright_hum)
       co2_mean = __mean(mean, topleft_co2, topright_co2, bottomleft_co2, bottomright_co2)
       wl_mean = __mean(mean, topleft_wl, topright_wl, bottomleft_wl, bottomright_wl)
-
-
-
-
+      # calculate refractive index
       n[i,j] = refractive_index(model,temp_mean, press_mean, wl_mean, hum_mean, co2_mean)
     end
   end
@@ -272,4 +269,4 @@ function grid_refractiveindex(model::AM,mean::MT,atm::AtmosphereSetting{N,M,T}) 
 end
 
 
-grid_refractiveindex(atm::AtmosphereSetting{N,M,T};model::AM=Ciddor(),meantype::MT=GeometricMean()) where {N,M,T<:Real,AM<:AirModel,MT<:MeanType} = grid_refractiveindex(model,meantype, atm)
+grid_refractiveindex(atm::AtmosphereSetting{N,M,T};model::AM=Ciddor(),meantype::MT=GeometricMean()) where {N,M,T<:Real,AM,MT} = grid_refractiveindex(model,meantype, atm)

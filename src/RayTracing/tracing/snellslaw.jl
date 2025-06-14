@@ -1,5 +1,5 @@
 
-function snellslaw(::Type{T}=Float64;normal::V,direction::V,n_incident::T=T(1.0),n_transmitted::T=T(1.0)) where {T<:Real,V<:AbstractVector{T}}
+function snellslaw!(::Type{T}=Float64;normal::V,direction::V,n_incident::T=T(1.0),n_transmitted::T=T(1.0)) where {T<:Real,V<:AbstractVector{T}}
   return __bend_ray(n_incident,n_transmitted,normal,direction)
 end
 

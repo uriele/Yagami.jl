@@ -23,9 +23,19 @@ begin
     end
 
 
+
     # main function for the fukushima model
     fun = Symbol("ray2",what,"_",name)
-    @inline @eval  function $fun(W::T,Z::T)::$(out) where T<:AbstractFloat
+
+    interffun = Symbol("ray2",what)
+
+
+    @eval function $interffun(::Fukushima,W::T,Z::T,a::T=MAJORAXIS(T),b::T=MINORAXIS(T))::$(out) where T<:AbstractFloat
+        b²= b*b/(a*a)
+        $inlinefun(W,Z,a,b,b²)
+    end
+
+    @eval  function $fun(W::T,Z::T)::$(out) where T<:AbstractFloat
         _MAJORAXIS = MAJORAXIS(T)
         _MINORAXIS = MINORAXIS(T)
         _COMPLECCENTRICITY² = COMPLECCENTRICITY²(T)

@@ -15,6 +15,16 @@ begin
         $(Expr(:block, ret...))
     end
 
+
+
+    interffun = Symbol("ray2",what)
+    @eval function $interffun(::Bowring,W::T,Z::T,a::T=MAJORAXIS(T),b::T=MINORAXIS(T))::$(out) where T<:AbstractFloat
+        b²=b^2/a^2
+        $inlinefun(W,Z,a,b,b²)
+    end
+
+
+
     # main function for the fukushima model
     fun = Symbol("ray2",what,"_",name)
     @inline @eval  function $fun(W::T,Z::T)::$(out) where T<:AbstractFloat

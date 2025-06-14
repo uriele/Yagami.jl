@@ -1,10 +1,10 @@
 using Test
 using Yagami
-using LinearAlgebra
 using Yagami.MaterialProperties: celsius_to_kelvin, atm_to_pascal, kelvin_to_celsius,pascal_to_atm
 using Yagami.RayTracing: AtmosphereSetting, create_atmosphere
+using Yagami.RayTracing:grid_refractiveindex
 using Yagami.RayTracing
-include("testutils.jl")
+
 h=create_hlevelset()
 θ=create_radii()
 
@@ -25,7 +25,8 @@ h=create_hlevelset()
     @test getco2ppm(atm1, 10.0,10.0)==getco2ppm(atm2, 10.0,10.0)==getco2ppm(atm3, 10.0,10.0)
   end
 
-  # Syntetic atmosphere functions for testing
+
+    # Syntetic atmosphere functions for testing
   θᵢ = create_radii(Float64;)
   hᵢ = create_hlevelset(Float64;hmin=4.0)
   temperatureᵢ = Matrix([temp_func(θ, h) for θ in θᵢ, h in hᵢ])
@@ -33,7 +34,8 @@ h=create_hlevelset()
   knots_θ = create_radii(Float64;θmin=0.0, θmax=350.0, radii=36)
   knots_h = create_hlevelset(Float64;hmin=4.0, hmax=120.0, levels=20)
 
-  @testset "create atmosphere" begin
+
+
     atm=create_atmosphere(;θᵢ=θᵢ,
       hᵢ=hᵢ,
       temperatureᵢ=temperatureᵢ,
@@ -56,37 +58,37 @@ h=create_hlevelset()
 
     @inline mse(x, y) = sum((x .- y).^2) / length(x)
 
-    # sind is a complex function so I allow some error in downscaling
-    @test mse(_temperatureᵢ, temperatureᵢ)<5
-    @test isapprox(_pressureᵢ, pressureᵢ)
+    @testset "test temperature and pressure average" begin
 
+      # sind is a complex function so I allow some error in downscaling
+      @test mse(_temperatureᵢ, temperatureᵢ)<5
+      @test isapprox(_pressureᵢ, pressureᵢ)
+    end
     n =grid_refractiveindex(atm;) # just to check if it works
     n1=grid_refractiveindex(atm; model=Ciddor())
     n2=grid_refractiveindex(atm; meantype=GeometricMean())
-    @test n==n1==n2
-    n_mathar=grid_refractiveindex(atm; model=Mathar075_141())
-    n_ciddorlog=grid_refractiveindex(atm; meantype=LogMean())
+    @testset "create atmosphere" begin
 
-    @test n_mathar≠n_ciddorlog # Mathar and Ciddor log mean are not the same
+      @test n==n1==n2
+      n_mathar=grid_refractiveindex(atm; model=Mathar075_141())
+      n_ciddorlog=grid_refractiveindex(atm; meantype=LogMean())
+
+      @test n_mathar≠n_ciddorlog # Mathar and Ciddor log mean are not the same
   end
 end
-
 
 @testset "Snell's Law" begin
   normal= [-1.0,0.0] # consider a outward normal to the surface
   direction= [sind(45.0), cosd(45.0)]
   direction_test  = copy(direction)
 
-  snellslaw(;normal=normal, direction=direction)
+  snellslaw!(;normal=normal, direction=direction)
   @test direction==direction_test # direction should not change
 
   # sin(θ1)/sin(θ2) = n2/n1
   sindout=cosd(45.)/1.5
   direction_test2 = [sqrt(1-sindout^2), sindout]
 
-  snellslaw(;normal=normal, direction=direction,n_transmitted=1.5)
+  snellslaw!(;normal=normal, direction=direction,n_transmitted=1.5)
   @test direction ≈ direction_test2
 end
-
-
-@test "RayMatch"
