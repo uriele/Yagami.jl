@@ -1,6 +1,76 @@
-import NaturalNeighbours.interpolate as NNinterpolate
-const SMALLSHIFT= 1e-6
+"""
+   `AtmosphereSetting(knots_θ, knots_h, temperature, pressure, humidity=0.0, co2ppm=0.0, wavelength=10.0)`
 
+Create an atmosphere setting interpolation object for ray tracing.
+
+# Arguments
+- `knots_θ::AbstractVector{T}`: A vector of angles in degrees, where `T` is a subtype of `Real`.
+- `knots_h::AbstractVector{T}`: A vector of heights in kilometers, where `T` is a subtype of `Real`.
+- `temperature::AbstractMatrix{T}`: A matrix of temperature values, where each row corresponds to a level and each column corresponds to a radius.
+- `pressure::AbstractMatrix{T}`: A matrix of pressure values, where each row corresponds to a level and each column corresponds to a radius.
+- `humidity::Real` (optional): A scalar or matrix of humidity values, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
+- `co2ppm::Real` (optional): A scalar or matrix of CO2 concentration values in parts per million, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
+- `wavelength::Real` (optional): A scalar or matrix of wavelength values, default is `10.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
+# Returns
+- An `AtmosphereSetting` object containing interpolated atmospheric properties for ray tracing.
+"""
+struct AtmosphereSetting{N,M,T}
+  temperature::AtmInterpolate{N,M,T}
+  pressure::AtmInterpolate{N,M,T}
+  humidity::AtmInterpolate
+  co2ppm::AtmInterpolate
+  wavelength::AtmInterpolate
+end
+@generated function AtmosphereSetting(knots_θ::Vi,knots_h::Vj,
+  temperature::M,pressure::M,
+  humidity=0.0,co2ppm=0.0,
+  wavelength=10.0) where {T<:Real,Vi<:AbstractVector{T},Vj<:AbstractVector{T},M<:AbstractMatrix{T}}
+
+  expr=Expr[]
+
+  push!(expr, :(temperature = AtmInterpolate(knots_θ,knots_h,temperature)))
+  push!(expr, :(pressure = AtmInterpolate(knots_θ,knots_h,pressure;logh=true)))
+
+  if humidity <: Real
+    push!(expr, :(humidity = AtmInterpolate([knots_θ[1],knots_θ[end]],[knots_h[1],knots_h[end]],fill(humidity,2,2))))
+  elseif humidity <: AbstractMatrix
+    push!(expr, :(humidity = AtmInterpolate(knots_θ,knots_h,humidity;logh=true)))
+  else
+    throw(ArgumentError("humidity must be a Real or AbstractMatrix but got $(typeof(humidity))."))
+  end
+
+  if co2ppm <: Real
+    push!(expr, :(co2ppm = AtmInterpolate([knots_θ[1],knots_θ[end]],[knots_h[1],knots_h[end]],fill(co2ppm,2,2))))
+  elseif co2ppm <: AbstractMatrix
+    push!(expr, :(co2ppm = AtmInterpolate(knots_θ,knots_h,co2ppm;logh=false)))
+  else
+    throw(ArgumentError("co2ppm must be a Real or AbstractMatrix but got $(typeof(co2ppm))."))
+  end
+
+  push!(expr, :(wavelength = AtmInterpolate([knots_θ[1],knots_θ[end]],[knots_h[1],knots_h[end]],fill(wavelength,2,2))))
+
+  return quote
+    $(expr...)
+    return AtmosphereSetting{length(knots_θ),length(knots_h),T}(temperature,pressure,humidity,co2ppm,wavelength)
+  end
+end
+
+Base.show(io::IO, atm::AtmosphereSetting{N,M,T}) where {N,M,T} = begin
+  println(io, "AtmosphereSetting{", N, ",", M, ",", T, "}")
+
+  pressure     = extrema(getfield(atm.pressure,:A))
+  temperature  = extrema(getfield(atm.temperature,:A))
+
+  humidity     = extrema(getfield(atm.humidity,:A))   |> unique
+  co2ppm       = extrema(getfield(atm.co2ppm,:A))     |> unique
+  wavelength   = extrema(getfield(atm.wavelength,:A)) |> unique
+
+  println(io, "  Temperature: ", temperature," K")
+  println(io, "  Pressure: ", pressure," Pa")
+  println(io, "  Humidity: ", humidity)
+  println(io, "  CO2: ", co2ppm, " ppm")
+  println(io, "  Wavelength: ", wavelength, " μm")
+end
 
 """
   $SIGNATURES
@@ -38,7 +108,7 @@ function create_hlevelset(::Type{T}=Float64;hmin::Real=T(0.0),
     h = LinRange(hmax,hmin, levels)
     return SVector{levels,T}(h)
   end
-
+  throw(error("Unexpected error in create_hlevelset."))
 end
 
 
@@ -63,93 +133,143 @@ function create_radii(::Type{T}=Float64;θmin::Real=T(0.0),
   _θmin = mod(θmin, 360)
   _θmax = mod(θmax, 360)
   @assert (_θmin != _θmax) "θmin must be less than θmax or equal to it, but got θmin=$θmin and θmax=$θmax."
-  h=LinRange(θmin, θmax, radii)
-  SVector{radii,T}(h)
+  θ=LinRange(θmin, θmax, radii)
+  SVector{radii,T}(θ)
 end
 
 """
-  $SIGNATURES
-Create an atmosphere model for ray tracing. The atmosphere is defined by the levels, radii, temperature, pressure, humidity, CO2 concentration, and wavelength.
-# Arguments
-- `levels::AL`: A vector of levels, where `AL` is an abstract vector type.
-- `radii::AR`: A vector of radii, where `AR` is an abstract vector type.
-- `temperature::MA`: A matrix of temperature values, where `MA` is an abstract matrix type.
-- `pressure::MA`: A matrix of pressure values, where `MA` is an abstract matrix type.
-- `humidity::MA`: A matrix of humidity values, where `MA` is an abstract matrix type.
-- `co2ppm::MA`: A matrix of CO2 concentration values in parts per million, where `MA` is an abstract matrix type.
-- `wavelength::MA`: A matrix of wavelength values, where `MA` is an abstract matrix type.
-- `model::MO`: An air model type, where `MO` is a subtype of `AirModel`. Default is `Ciddor()`.
+ `create_atmosphere(; θᵢ, hᵢ, temperatureᵢ, pressureᵢ, humidity=0.0, co2ppm=0.0, wavelength=10.0, knots_θ=create_hlevelset(T;), knots_h=create_radii(T;))`
+
+
+Create an atmosphere setting for ray tracing. This function generates an `AtmosphereSetting` object based on the provided parameters, which include angles, heights, temperature, pressure, humidity, CO2 concentration, and wavelength.
+
+# Key Arguments
+- `θᵢ::AbstractVector{T}`: A vector of angles in degrees, where `T` is a subtype of `Real`.
+- `hᵢ::AbstractVector{T}`: A vector of heights in kilometers, where `T` is a subtype of `Real`.
+- `temperatureᵢ::AbstractMatrix{T}`: A matrix of temperature values, where each row corresponds to a level and each column corresponds to a radius.
+- `pressureᵢ::AbstractMatrix{T}`: A matrix of pressure values, where each row corresponds to a level and each column corresponds to a radius.
+- `humidity=0.0`: A scalar or matrix of humidity values, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
+- `co2ppm=0.0`: A scalar or matrix of CO2 concentration values in parts per million, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
+- `wavelength=10.0`: A scalar or matrix of wavelength values, default is `10.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
+- `knots_θ::AbstractVector{T}=create_hlevelset(T;)`: A vector of angles in degrees for the knots, default is created using `create_hlevelset`.
+- `knots_h::AbstractVector{T}=create_radii(T;)`: A vector of heights in kilometers for the knots, default is created using `create_radii`.
 # Returns
-- An atmosphere model represented as a matrix of refractive indices, where each element corresponds to the refractive index at a specific level and radius.
+- An `AtmosphereSetting` object containing interpolated atmospheric properties for ray tracing.
 """
-function create_atmosphere(levels::AL,
-  radii::AR, temperature::MA,
-  pressure::MA,humidity::MA,co2ppm::MA, wavelength::MA,
-  model::MO=Ciddor()) where {T<:Real,MA<:AbstractMatrix{T},AL<:AbstractVector{T},AR<:AbstractVector{T},MO<:AirModel}
-  ###############################################################################################
-  @assert(length(levels) > 0, "levels must be a non-empty vector but got levels=$levels.")
-  @assert(length(radii) > 0, "radii must be a non-empty vector but got radii=$radii.")
-  Nt,Mt = size(temperature)
-  Np,Mp = size(pressure)
-  @assert(Nt == Np && Mt == Mp, "temperature and pressure must have the same dimensions but got temperature=$temperature and pressure=$pressure.")
-  N,M=Nt,Mt
-  @assert(length(levels) == M+1, "levels must have length M+1 where M is the number of radii but got levels=$(length(levels)) and M=$M.")
-  @assert(length(radii) == N, "radii must have length N where N is the number of levels but got radii=$(length(radii)) and N=$N.")
-  ###############################################################################################
-  atmosphere=similar(temperature)
+@generated function create_atmosphere(;
+  θᵢ::AbstractVector{T},
+  hᵢ::AbstractVector{T},
+  temperatureᵢ::AbstractMatrix{T},
+  pressureᵢ::AbstractMatrix{T},
+  humidity=0.0,
+  co2ppm=0.0,
+  wavelength=10.0,
+  knots_θ::AbstractVector{T}=create_hlevelset(T;),
+  knots_h::AbstractVector{T}=create_radii(T;),
+) where {T<:Real}
 
-  refractive_index!(model,atmosphere, temperature, pressure, wavelength, humidity,co2ppm)
-  # Add CO2 effect if needed
-  return atmosphere
+  expr = Expr[]
+  expr_loop = Expr[]
+  # First create interpolation object
+  push!(expr,:(atm=AtmosphereSetting(θᵢ,hᵢ,temperatureᵢ,pressureᵢ,humidity,co2ppm, wavelength)))
+  push!(expr,:(temperature=similar(temperatureᵢ,length(knots_θ),length(knots_h))))
+  push!(expr,:(pressure=similar(pressureᵢ,length(knots_θ),length(knots_h))))
 
+
+  push!(expr_loop,:(temperature[i,j] = atm.temperature(knots_θ[i],knots_h[j]) ))
+  push!(expr_loop,:(pressure[i,j] = atm.pressure(knots_θ[i],knots_h[j]) ))
+
+
+  if humidity <: AbstractMatrix
+    push!(expr,:(humidity = similar(temperatureᵢ,length(knots_θ), length(knots_h))))
+    push!(expr_loop,:(humidity[i,j] = atm.humidity(knots_θ[i],knots_h[j]) ))
+  elseif humidity <: Real
+    push!(expr,:(humidity = humidity))
+  else
+    throw(ArgumentError("humidity must be a Real or AbstractMatrix but got $(typeof(humidity))."))
+  end
+
+  if co2ppm <: AbstractMatrix
+    push!(expr,:(co2ppm = similar(temperatureᵢ,length(knots_θ), length(knots_h))))
+    push!(expr_loop,:(co2ppm[i,j] = atm.co2ppm(knots_θ[i],knots_h[j]) ))
+  elseif co2ppm <: Real
+    push!(expr,:(co2ppm = co2ppm))
+  else
+    throw(ArgumentError("co2ppm must be a Real or AbstractMatrix but got $(typeof(co2ppm))."))
+  end
+
+  if wavelength <: AbstractMatrix
+    push!(expr,:(wavelength = similar(temperatureᵢ,length(knots_θ), length(knots_h))))
+    push!(expr_loop,:(wavelength[i,j] = atm.wavelength(knots_θ[i],knots_h[j]) ))
+  elseif wavelength <: Real
+    push!(expr,:(wavelength = wavelength))
+  else
+    throw(ArgumentError("wavelength must be a Real or AbstractMatrix but got $(typeof(wavelength))."))
+  end
+
+  return quote
+    $(expr...)
+    @inbounds for j in eachindex(knots_h)
+      @inbounds for i in eachindex(knots_θ)
+        $(expr_loop...)
+      end
+    end
+    return AtmosphereSetting(knots_θ,knots_h,temperature,pressure,humidity,co2ppm,wavelength)
+  end
 end
 
 
+function grid_refractiveindex(model::AM,mean::MT,atm::AtmosphereSetting{N,M,T}) where {N,M,T<:Real,AM<:AirModel,MT<:MeanType}
+  @info "Using model $(model) to compute refractive index for atmosphere setting with $(N) levels and $(M) radii."
+  @info "Mean type: $(mean)"
+  n= similar(getfield(atm.temperature,:A),N,M-1)
 
-"""
-  $SIGNATURES
-Create an atmosphere model for ray tracing. The atmosphere is defined by the levels, radii, temperature, pressure, humidity, CO2 concentration, and wavelength.
-# KeyArguments
-- `levels::AbstractVector`: A vector of levels, where each element represents a height level in the atmosphere.
-- `radii::AbstractVector`: A vector of radii, where each element represents a radius in the atmosphere.
-- `temperature::AbstractMatrix`: A matrix of temperature values, where each row corresponds to a level and each column corresponds to a radius.
-- `pressure::AbstractMatrix`: A matrix of pressure values, where each row corresponds to a level and each column corresponds to a radius.
-- `hunidity::T` (optional): A scalar or matrix of humidity values, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
-- `co2ppm::T` (optional): A scalar or matrix of CO2 concentration values in parts per million, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
-- `wavelength::T` (optional): A scalar or matrix of wavelength values, default is `10.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
-- `model::MO` (optional): An air model type, where `MO` is a subtype of `AirModel`. Default is `Ciddor()`.
-# Returns
-- An atmosphere model represented as a matrix of refractive indices, where each element corresponds to the refractive index at a specific level and radius.
-"""
-function create_atmosphere(::Type{T}=Float64;
-  levels::AbstractVector,
-  radii::AbstractVector,
-  temperature::AbstractMatrix,
-  pressure::AbstractMatrix,
-  humidity=T(0.0),
-  co2ppm=T(0.0),
-  wavelength=T(10.0),
-  model::MO=Ciddor()) where {T<:Real,MO<:AirModel}
+  knots_θ = getfield(atm.temperature,:knots_θ)
+  knots_h = getfield(atm.temperature,:knots_h)
 
-  levels = SVector{length(levels),T}(levels)
-  radii = SVector{length(radii),T}(radii)
-  temperature = Matrix{T}(temperature)
-  pressure = Matrix{T}(pressure)
-  if isa(humidity,Real)
-    humidity = fill(humidity, size(temperature))
-  else
-    humidity = Matrix{T}(humidity)
-  end
-  if isa(co2ppm,Real)
-    co2ppm = fill(co2ppm, size(temperature))
-  else
-    co2ppm = Matrix{T}(co2ppm)
-  end
-  if isa(wavelength,Real)
-    wavelength = fill(wavelength, size(temperature))
-  else
-    wavelength = Matrix{T}(wavelength)
+  @inbounds for j in firstindex(knots_h):lastindex(knots_h)-1 # I add extra index for the wrapping
+    @inbounds for i in firstindex(knots_θ):lastindex(knots_θ)-1 # I add extra index for the wrapping
+      # temperature
+      topleft_temp = atm.temperature(knots_θ[i],knots_h[j])
+      topright_temp = atm.temperature(knots_θ[i+1],knots_h[j])
+      bottomleft_temp = atm.temperature(knots_θ[i],knots_h[j+1])
+      bottomright_temp = atm.temperature(knots_θ[i+1],knots_h[j+1])
+      # pressure
+      topleft_press = atm.pressure(knots_θ[i],knots_h[j])
+      topright_press = atm.pressure(knots_θ[i+1],knots_h[j])
+      bottomleft_press = atm.pressure(knots_θ[i],knots_h[j+1])
+      bottomright_press = atm.pressure(knots_θ[i+1],knots_h[j+1])
+      # humidity
+      topleft_hum = atm.humidity(knots_θ[i],knots_h[j])
+      topright_hum = atm.humidity(knots_θ[i+1],knots_h[j])
+      bottomleft_hum = atm.humidity(knots_θ[i],knots_h[j+1])
+      bottomright_hum = atm.humidity(knots_θ[i+1],knots_h[j+1])
+      # co2ppm
+      topleft_co2 = atm.co2ppm(knots_θ[i],knots_h[j])
+      topright_co2 = atm.co2ppm(knots_θ[i+1],knots_h[j])
+      bottomleft_co2 = atm.co2ppm(knots_θ[i],knots_h[j+1])
+      bottomright_co2 = atm.co2ppm(knots_θ[i+1],knots_h[j+1])
+      # wavelength
+      topleft_wl = atm.wavelength(knots_θ[i],knots_h[j])
+      topright_wl = atm.wavelength(knots_θ[i+1],knots_h[j])
+      bottomleft_wl = atm.wavelength(knots_θ[i],knots_h[j+1])
+      bottomright_wl = atm.wavelength(knots_θ[i+1],knots_h[j+1])
+      #
+      temp_mean = __mean(mean, topleft_temp, topright_temp, bottomleft_temp, bottomright_temp)
+      press_mean = __mean(mean, topleft_press, topright_press, bottomleft_press, bottomright_press)
+      hum_mean = __mean(mean, topleft_hum, topright_hum, bottomleft_hum, bottomright_hum)
+      co2_mean = __mean(mean, topleft_co2, topright_co2, bottomleft_co2, bottomright_co2)
+      wl_mean = __mean(mean, topleft_wl, topright_wl, bottomleft_wl, bottomright_wl)
+
+
+
+
+      n[i,j] = refractive_index(model,temp_mean, press_mean, wl_mean, hum_mean, co2_mean)
+    end
   end
 
-  return create_atmosphere(levels, radii, temperature, pressure, humidity, co2ppm, wavelength, model)
+  return n
 end
+
+
+grid_refractiveindex(atm::AtmosphereSetting{N,M,T};model::AM=Ciddor(),meantype::MT=GeometricMean()) where {N,M,T<:Real,AM<:AirModel,MT<:MeanType} = grid_refractiveindex(model,meantype, atm)

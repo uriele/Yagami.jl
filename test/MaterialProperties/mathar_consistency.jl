@@ -27,6 +27,7 @@ const mathar_pythons=(
 for (mathar_function,mathar_function!,mathar_python) in zip(mathar_functions,mathar_functions!,mathar_pythons)
   @testset "Consistency of Mathar refractive index with Python implementation for $mathar_function"  begin
     matharpy=load_python_scripts("MaterialProperties/pythonscript/$mathar_python")
+    #matharpy=load_python_scripts("test/MaterialProperties/pythonscript/$mathar_python")
     n_py = (λ,t,p,h) -> matharpy.n(pyimport("numpy").array(λ),t,p,h)
     λ= LinRange(0.3,1.69,10) # wavelength in µm
     λ=vcat(λ...,LinRange(9.5,11.0,10)...)
@@ -66,5 +67,25 @@ for (mathar_function,mathar_function!,mathar_python) in zip(mathar_functions,mat
     mathar_function!(n_yagami!,T!,p!,λ!,h!)
 
     @test n_yagami ≈ n_yagami!
+
+
+
+    # Test single value
+    n_yagami1! = similar(n_yagami!)
+    λ!      = fill(10.0,100) # wavelength in µm
+    h!      = fill(0.5,100)
+    co2ppm! = fill(400.0,100) # CO2 concentration in ppm
+
+    ciddor_refractive_index!(n_yagami!,T!,p!,λ!,h!,co2ppm!)
+    ciddor_refractive_index!(n_yagami1!,T!,p!,λ!,h!,co2ppm![1])
+
+    @test n_yagami! ≈ n_yagami1!
+    ciddor_refractive_index!(n_yagami1!,T!,p!,λ!,h![1],co2ppm![1])
+    @test n_yagami! ≈ n_yagami1!
+    ciddor_refractive_index!(n_yagami1!,T!,p!,λ![1],h![1],co2ppm![1])
+    @test n_yagami! ≈ n_yagami1!
+
+
+
   end
 end

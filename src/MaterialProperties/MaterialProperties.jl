@@ -1,5 +1,6 @@
 
 module MaterialProperties
+  using DocStringExtensions
   using Unitful: Pa,hPa, K, °C, km, m, ustrip, uconvert,mbar,atm
   using Unitful
   using Moshi.Match: @match
@@ -17,9 +18,31 @@ module MaterialProperties
   include("constants.jl")
   include("utilities.jl")
 
+
+  """
+     $SIGNATURES
+
+  Returns the refractive index of air at a given wavelength and temperature, pressure, and humidity.
+  The refractive index is calculated using the specified air model and parameters.
+  # Arguments
+  - `model::G`: The air model to use for the calculation, which must be a subtype of `AirModel`.
+  - `params::Vararg{Real,4}`: The parameters for the refractive index calculation, which can be wavelength, temperature, pressure, and humidity.
+  # Returns
+  - The refractive index of air at the specified wavelength and conditions.
+  """
   refractive_index(model::G,params::Vararg{Int,5}) where {G <: AirModel} = refractive_index(model,float.(params...)...)
-  refractive_index(model::G,params::Vararg{Real,5}) where {G <: AirModel} = refractive_index(model,promote.(params...)...)
-  refractive_index!(model::G,args...) where {G <: AirModel} = throw(ArgumentError("MaterialProperties.jl: refractive_index! does not support the current model, use $CURRENTAirModel instead."))
+
+  """
+     $SIGNATURES
+  Returns the refractive index of air at a given wavelength and temperature, pressure, and humidity.
+  The refractive index is calculated using the specified air model and parameters.
+  # Arguments
+  - `model::G`: The air model to use for the calculation, which must be a subtype of `AirModel`.
+  - `args::Vararg{Real,4}`: The parameters for the refractive index calculation, which can be wavelength, temperature, pressure, and humidity.
+  # Returns
+  - The refractive index of air at the specified wavelength and conditions.
+  """
+  refractive_index!(::G,::A,::A,::W,::H,::C) where {G <: AirModel,A,W,H,C} = throw(ArgumentError("MaterialProperties.jl: refractive_index! does not support the current model, use $CURRENTAirModel instead."))
 
   # ciddor refractive index model
   include("models/ciddor.jl")

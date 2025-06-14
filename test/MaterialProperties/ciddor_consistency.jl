@@ -1,9 +1,9 @@
 
-include("testutils.jl")
-
 @testset "Consistency of Ciddor refractive index with Python implementation" begin
 
   ciddorpy=load_python_scripts("MaterialProperties/pythonscript/ciddor.py")
+  #ciddorpy=load_python_scripts("test/MaterialProperties/pythonscript/ciddor.py")
+
   n_py = (λ,t,p,h,co2ppm) -> ciddorpy.n(pyimport("numpy").array(λ),t,p,h,co2ppm)
   svp_py = (t)-> ciddorpy.saturation_vapor_pressure(pyimport("numpy").array(t))
   Z_py = (t,p,xw) -> ciddorpy.Z(pyimport("numpy").array(t,p,xw))
@@ -30,9 +30,9 @@ include("testutils.jl")
       for (k,h) in enumerate(h)
         for (l,co2ppm) in enumerate(co2ppm)
             @inbounds n_yagami[:,i,j,k,l]      .= @. Yagami.MaterialProperties.ciddor_refractive_index(T,p,λ,h,co2ppm)
-            @inbounds n_python[:,i,j,k,l]    .= n_py(λ,T,p,h,co2ppm)
-            @inbounds svp_yagami[:,i,j,k,l]    .=@. Yagami.MaterialProperties.__saturation_vapor_pressure(T)
-            @inbounds svp_python[:,i,j,k,l]  .= svp_py(T)
+            @inbounds n_python[:,i,j,k,l]      .= n_py(λ,T,p,h,co2ppm)
+            @inbounds svp_yagami[:,i,j,k,l]    .= @. Yagami.MaterialProperties.__saturation_vapor_pressure(T)
+            @inbounds svp_python[:,i,j,k,l]    .= svp_py(T)
         end
       end
     end
@@ -62,5 +62,22 @@ include("testutils.jl")
   ciddor_refractive_index!(n_yagami!,T!,p!,λ!,h!,co2ppm!)
 
   @test n_yagami ≈ n_yagami!
+
+
+  n_yagami1! = similar(n_yagami!)
+  λ!      = fill(10.0,100) # wavelength in µm
+  h!      = fill(0.5,100)
+  co2ppm! = fill(400.0,100) # CO2 concentration in ppm
+
+  ciddor_refractive_index!(n_yagami!,T!,p!,λ!,h!,co2ppm!)
+  ciddor_refractive_index!(n_yagami1!,T!,p!,λ!,h!,co2ppm![1])
+
+  @test n_yagami! ≈ n_yagami1!
+  ciddor_refractive_index!(n_yagami1!,T!,p!,λ!,h![1],co2ppm![1])
+  @test n_yagami! ≈ n_yagami1!
+  ciddor_refractive_index!(n_yagami1!,T!,p!,λ![1],h![1],co2ppm![1])
+  @test n_yagami! ≈ n_yagami1!
+
+
 
 end

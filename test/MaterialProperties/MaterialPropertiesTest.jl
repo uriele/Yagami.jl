@@ -7,7 +7,6 @@ using PyCall
 using Yagami.MaterialProperties
 include("testutils.jl")
 
-include("testutils.jl")
 include("ciddor_consistency.jl")
 include("mathar_consistency.jl")
 
@@ -50,13 +49,26 @@ n     = similar(λ)
       mathar013_025_refractive_index!
     )
 
-   # for (model, func, func!) in zip(models, modelfunc, modelfunc!)
 
-   model=models[1]
-   modelfunc=modelfuncs[1]
-   modelfunc! = modelfuncs![1]
+    for i in eachindex(models)
+      @testset "Mathar $(models[i]) interfaces" begin
 
-   @test refractive_index(model,T[1],p[1],λ[1],h[1],co2ppm[1])== modelfunc(T[1], p[1], λ[1], h[1])
-   @test refractive_index!(model, n, T, p, λ, h, co2ppm)==modelfunc!(n, T, p, λ, h)
+       model=models[i]
+        modelfunc=modelfuncs[i]
+        modelfunc! = modelfuncs![i]
+
+        @test refractive_index(model,T[1],p[1],λ[1],h[1],co2ppm[1])==  modelfunc(T[1], p[1], λ[1], h[1])
+        @test refractive_index!(model, n, T, p, λ, h, co2ppm)==modelfunc!(n, T, p, λ, h)
+
+
+        _h      = fill(0.5,100)
+        _co2ppm = fill(450.0,100) # CO2 concentration in ppm
+        _λ      = fill(10.0,100) # wavelength in µm
+
+
+        @test refractive_index!(model,n,T,p,_λ[1],_h[1],_co2ppm[1])== modelfunc!(n, T, p, λ[1], h[1])
+        @test refractive_index!(model,n,T,p,_λ,_h,_co2ppm)== refractive_index!(model,n,T,p,_λ[1],_h[1])
+      end
+    end
   end
 end

@@ -1,22 +1,53 @@
 
 # Interface for Ciddor's refractive index model
 refractive_index!(::Ciddor, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T},
-   wavelength::AbstractArray{T}, humidity::AbstractArray{T}, CO2ppm::AbstractArray{T}) where {T<:AbstractFloat} =
+   wavelength::W=10.0, humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C} =
   ciddor_refractive_index!(n, temperature, pressure, wavelength, humidity, CO2ppm)
-refractive_index(::Ciddor, temperature::T, pressure::T, wavelength::T, humidity::T, CO2ppm::T) where T<:AbstractFloat =
+refractive_index(::Ciddor, temperature::T, pressure::T, wavelength::T=10.0, humidity::T=0.0, CO2ppm::T=450.0) where T<:AbstractFloat =
 ciddor_refractive_index(temperature, pressure, wavelength, humidity, CO2ppm)
 
 
 
 # Direct call to Ciddor's refractive index model
-function ciddor_refractive_index!(n::AbstractArray{T},temperature::AbstractArray{T}, pressure::AbstractArray{T},
-  wavelength::AbstractArray{T}, humidity::AbstractArray{T}, CO2ppm::AbstractArray{T}) where {T<:AbstractFloat}
-  @simd for i in eachindex(n)
-    @inbounds n[i] = __refractive_index_ciddor(temperature[i], pressure[i], wavelength[i], humidity[i], CO2ppm[i])
+
+
+@generated function ciddor_refractive_index!(n::AbstractArray{T},temperature::AbstractArray{T}, pressure::AbstractArray{T},
+  wavelength::W=10.0, humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C}
+
+  expr=Expr[]
+  if wavelength<:AbstractArray
+    push!(expr,:(wl=wavelength[i]))
+  elseif wavelength<:Real
+    push!(expr,:(wl=wavelength))
+  else
+    error("ciddor_refractive_index!: wavelength must be a Real or AbstractArray")
+  end
+
+  if humidity<:AbstractArray
+    push!(expr,:(hu=humidity[i]))
+  elseif humidity<:Real
+    push!(expr,:(hu=humidity))
+  else
+    error("ciddor_refractive_index!: humidity must be a Real or AbstractArray")
+  end
+
+  if CO2ppm<:AbstractArray
+    push!(expr,:(co2=CO2ppm[i]))
+  elseif CO2ppm<:Real
+    push!(expr,:(co2=CO2ppm))
+  else
+    error("ciddor_refractive_index!: CO2ppm must be a Real or AbstractArray")
+  end
+
+  return quote
+    for i in eachindex(temperature)
+      $(expr...) # this will be the wavelength, humidity and CO2ppm for each index
+      n[i] = __refractive_index_ciddor(temperature[i], pressure[i], wl, hu, co2)
+    end
   end
 end
 
-ciddor_refractive_index(temperature::T, pressure::T, wavelength::T, humidity::T, CO2ppm::T) where T<:AbstractFloat  = __refractive_index_ciddor(temperature, pressure, wavelength, humidity, CO2ppm)
+ciddor_refractive_index(temperature::T, pressure::T, wavelength::W=10.0, humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C}  = __refractive_index_ciddor(temperature, pressure, wavelength, humidity, CO2ppm)
 
 
 
