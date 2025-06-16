@@ -220,8 +220,8 @@ end
 
 
 function grid_refractiveindex(model::AM,mean::MT,atm::AtmosphereSetting{N,M,T}) where {N,M,T<:Real,AM,MT}
-  @info "Using model $(model) to compute refractive index for atmosphere setting with $(N) levels and $(M) radii."
-  @info "Mean type: $(mean)"
+
+
   n= similar(getfield(atm.temperature,:A),N,M-1)
 
   knots_θ = getfield(atm.temperature,:knots_θ)

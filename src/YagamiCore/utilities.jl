@@ -4,7 +4,7 @@ for datuminfo in DATUMINFO
   funcdatum = datuminfo
 
  @eval $funcdatum(::Type{<:T}=Float64) where T<:AbstractFloat = convert(T, $refdatum[])
- @eval $funcdatum(::Type{<:Real})  = convert(T, $refdatum[])
+ @eval $funcdatum(::Type{<:Real})  = convert(Float64, $refdatum[])
 end
 
 
@@ -69,4 +69,62 @@ end
       _COMPLECCENTRICITY² = 1 - _ECCENTRICITY²
       $(SETDATUM...)
     return nothing
+end
+
+
+@inline function clampangle(θ::T, θmin::T, θmax::T)::T where T<:AbstractFloat
+    if θmin < θmax
+      (θmin<θ<θmax) && return θ
+    else
+      (θmin<θ || θ<θmax) && return θ
+    end
+    distθmin = mod(θmin-θ,360)
+    distθmax = mod(θ-θmax,360)
+    return distθmin < distθmax ? θmin : θmax
+end
+
+
+@inline function intersectionrayray(pointx1::T,pointy1::T, directionx1::T, directiony1::T,
+                                    pointx2::T,pointy2::T, directionx2::T, directiony2::T) where T<:AbstractFloat
+
+    Δx = pointx2 - pointx1
+    Δy = pointy2 - pointy1
+
+    det = -directionx1*directiony2 + directiony1*directionx2
+
+    det= abs(det) < eps(T) ? eps(T)*sign(det) : det
+
+    t = (Δy*directionx2 - Δx*directiony2)/det
+    h = (Δy*directionx1 - Δx*directiony1)/det
+
+    return t,h
+end
+
+
+@inline function rotation_matrix(angle::Real,nx::Real,ny::Real)
+  cosθ = cosd(angle)
+  sinθ = sind(angle)
+  return cosθ*nx+sinθ*ny, -sinθ*nx+cosθ*ny
+end
+
+@inline function nadir_angle_normal(nx::Real,ny::Real,angle::Real)
+  norm_ = hypot(nx, ny)
+  nx,ny = nx/norm_, ny/norm_
+
+  rotation_matrix(angle, nx, ny)
+end
+
+@inline function limb_angle_normal(nx::Real,ny::Real,angle::Real)
+  nadir_angle_normal(ny, -nx, angle)
+end
+
+"""
+    infologger(filename::String)
+Create a logger that writes log messages to a file.
+This logger uses the `FormatLogger` to format messages and write them to the specified file.
+"""
+function infologger(filename::String)
+  FormatLogger(filename;) do io, args
+    println(io, args.message)
+  end
 end

@@ -29,7 +29,8 @@ include("CurtisGodson/CurtisGodson.jl")
 @reexport using .RayTracing: create_atmosphere, create_hlevelset,create_radii
 
 @reexport using .RayTracing: Ray2D, ResultRay
-@reexport using .RayTracing: Ray2Ds, ResultRays
+
+
 @reexport using .RayTracing: getwedgeindex, getpoint, getdirection,getaltitude,getazimuth,getlength
 @reexport using .RayTracing: ray2_angle, ray2_altitude, ray2_altitudeangle
 @reexport using .RayTracing: EarthApproximation, Fukushima, Bowring

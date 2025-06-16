@@ -54,7 +54,7 @@ for mathar in MATHARRANGES
   CHP              = Symbol("M",mathar, "CHP")
   REFSIGMA         = Symbol("M",mathar, "REFσ")
 
-  @info "$REFSIGMA"
+
 
   @eval function $interfun(temperature::T, pressure::T, wavelength::T, humidity::T) where T<:AbstractFloat
     return $fun(temperature, pressure, wavelength, humidity)

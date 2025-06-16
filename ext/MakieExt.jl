@@ -1,6 +1,6 @@
 module MakieExt
-using Yagami,Makie,MakieExtra
-include("src/plot.jl")
+using Yagami,Makie
+#include("src/plot.jl")
 
 
 end

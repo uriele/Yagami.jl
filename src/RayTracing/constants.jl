@@ -1,13 +1,36 @@
+############################################################################################
+# Constants for the DistanceFunctions
+############################################################################################
+# Default values for the distance function parameters
+const DFI::Int = 0
+const DFJ::Int = 0
+const DFISLVL::Bool = true
+const DFDESCENDING::Bool = true
+const DFPOINTX::Float64 = 0.00001
+const DFPOINTY::Float64 = 0.00001
+const DFDIRECTIONX::Float64 = 0.0
+const DFDIRECTIONY::Float64 = 1.0
+const DFHMIN::Float64 = 0.0
+const DFHMAX::Float64 = 120.0
+const DFTHMIN::Float64 = -Inf
+const DFTHMAX::Float64 = Inf
+
+# note: f not directly accessible
+const DISTFUNCPROP  = (:pointx,   :pointy,  :directionx, :directiony,  :hmin,  :hmax,   :θmin,   :θmax, :i, :j, :descending, :islevel)
+const DFDISTFUNCPROP      = (DFPOINTX, DFPOINTY, DFDIRECTIONX, DFDIRECTIONY,DFHMIN, DFHMAX, DFTHMIN, DFTHMAX,DFI,DFJ,DFDESCENDING,  DFISLVL)
+const DISTTYPEPROP        = (:T, :T, :T, :T, :T, :T, :T, :T, :Int, :Int, :Bool, :Bool)
+
+############################################################################################
 const SMALLSHIFT= 1e-6
 ############################################################################################
 const OUTTYPE = [:(T),:(T),:(Tuple{T,T})]
-const SAFEANGLE = Expr[ :(W==0 && return Z==0 ? 360 : (Z>0 ? 90 : 270)),
+const SAFEANGLE = Expr[ :(W==0 && return Z==0 ? T(360) : (Z>0 ? T(90) : T(270))),
   :(Z == 0 && return W>0 ? 360 : 180)]
-const SAFEALTITUDE = Expr[ :(W==0 && return Z==0 ? 0 : abs(Z)-_MINORAXIS),
-  :(Z==0 && return W==0 ? 0 : abs(W)-_MAJORAXIS)]
+const SAFEALTITUDE = Expr[ :(W==0 && return Z==0 ? T(0) : abs(Z)-_MINORAXIS),
+  :(Z==0 && return W==0 ? T(0) : abs(W)-_MAJORAXIS)]
 const SAFEALTITUDEANGLE = Expr[
-    :(W==0 && return Z==0 ? (0,0) : (abs(Z)-_MINORAXIS,Z>0 ? 90 : 270)),
-    :(Z==0 && return W==0 ? (0,0) : (abs(W)-_MAJORAXIS,W>0 ? 360 : 180))]
+    :(W==0 && return Z==0 ? (T(0),T(0)) : (abs(Z)-_MINORAXIS,Z>0 ? T(90) : T(270))),
+    :(Z==0 && return W==0 ? (T(0),T(0)) : (abs(W)-_MAJORAXIS,W>0 ? T(360) : T(180)))]
 const SAFERETURN = (SAFEANGLE,SAFEALTITUDE,SAFEALTITUDEANGLE)
 
 const RETURNWHAT = (:_angle,:_altitude, :_altitudeangle)
@@ -79,3 +102,14 @@ const EXISTINGMODELS = (:fukushima, :bowring)
 
 # Constants for the Earth approximations
 const EXPFUNC = (:getpoint,:getdirection, :getwedgeindex, :getlength, :getaltitude, :getazimuth)
+############################################################################################
+# Constants for the PROBLEMRAY data structure
+############################################################################################
+
+const PROBLPROPDIRECT =(:filename, :meantype, :model, :earthmodel,
+  :refractive, :pointsx, :pointsy, :atmosphere,:directionsx, :directionsy, :tangent_h, :tangent_θ,
+  :nscans, :nlos)
+
+const PROBLATMPROP = (:temperature,:pressure, :humidity, :co2ppm, :wavelength)
+const PROBLKNOTS = (:knots_h, :knots_θ)
+const PROBLPROPTOTAL= vcat(PROBLPROPDIRECT..., PROBLATMPROP..., PROBLKNOTS...)

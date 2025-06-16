@@ -1,4 +1,3 @@
-
 """
     `Ray2D{T}`
 
@@ -12,7 +11,7 @@
   - `j::Int`: index of the sub-wedge in which the ray is currently located. Default is 0.
 
 """
-struct Ray2D{T<:AbstractFloat}
+mutable struct Ray2D{T<:AbstractFloat}
     pointx::T
     pointy::T
     directionx::T
@@ -54,6 +53,18 @@ end
 Base.show(io::IO,  r::Ray2D{T}) where {T} = begin
   println(io, "($(round(__getpointx(r),digits=2)),$(round(__getpointy(r),digits=2)))")
 end
+
+@inline __getpointx(r::Ray2D{T}) where {T} = getfield(r, :pointx)
+@inline __getpointy(r::Ray2D{T}) where {T} = getfield(r, :pointy)
+@inline __getdirectionx(r::Ray2D{T}) where {T} = getfield(r, :directionx)
+@inline __getdirectiony(r::Ray2D{T}) where {T} = getfield(r, :directiony)
+
+@inline __setpointx!(r::Ray2D{T}, value::T) where {T} = setfield!(r, :pointx, value)
+@inline __setpointy!(r::Ray2D{T}, value::T) where {T} = setfield!(r, :pointy, value)
+@inline __setdirectionx!(r::Ray2D{T}, value::T) where {T} = setfield!(r, :directionx, value)
+@inline __setdirectiony!(r::Ray2D{T}, value::T) where {T} = setfield!(r, :directiony, value)
+@inline __seti!(r::Ray2D{T}, value::Int) where {T} = setfield!(r, :i, value)
+@inline __setj!(r::Ray2D{T}, value::Int) where {T} = setfield!(r, :j, value)
 
 """
  $SIGNATURES
@@ -139,194 +150,90 @@ Data structure to hold the result of a ray intersection in 2D space.
 This structure contains the intersection point, direction, index of the wedge,
 length of the intersection, altitude, and azimuth of the ray.
 # Arguments
-  - `intersection_pointx::T`: x-coordinate of the intersection point in km.
-  - `intersection_pointy::T`: y-coordinate of the intersection point in km.
-  - `intersection_directionx::T`: x-component of the ray's normalized direction vector at the intersection.
-  - `intersection_directiony::T`: y-component of the ray's normalized direction vector at the intersection.
-  - `intersection_index_i::Int`: index of the wedge in which the ray intersects.
-  - `intersection_index_j::Int`: index of the sub-wedge in which the ray intersects.
-  - `intersection_length::T`: length of the intersection in km.
-  - `intersection_altitude::T`: altitude at the intersection point in km.
-  - `intersection_azimuth::T`: azimuth angle at the intersection point in radians.
-
+  - `pointx::A`: x-coordinate of the intersection point in km.
+  - `pointy::A`: y-coordinate of the intersection point in km.
+  - `directionx::A`: x-component of the intersection direction vector.
+  - `directiony::A`: y-component of the intersection direction vector.
+  - `index_i::Ai`: index of the wedge in which the ray intersects.
+  - `index_j::Ai`: index of the sub-wedge in which the ray intersects.
+  - `length::A`: length of the intersection in km.
+  - `altitude::A`: altitude of the intersection in km.
+  - `azimuth::A`: azimuth angle of the intersection in degrees.
 """
-struct ResultRay{T}
-    intersection_pointx::T
-    intersection_pointy::T
-    intersection_directionx::T
-    intersection_directiony::T
-    intersection_index_i::Int
-    intersection_index_j::Int
-    intersection_length::   T
-    intersection_altitude:: T
-    intersection_azimuth::  T
+struct ResultRay{M,T<:AbstractFloat,A<:AbstractVector{T},Ai<:AbstractVector{Int}}
+    pointx::A
+    pointy::A
+    directionx::A
+    directiony::A
+    index_i::Ai
+    index_j::Ai
+    length::   A
+    altitude:: A
+    azimuth::  A
 
-    ResultRay{T}(directionx::T=0.0, directiony::T=0.0, pointx::T=0.0, pointy::T=0.0,
-                  index_i::Int=0, index_j::Int=0, length::T=0.0,
-                  altitude::T=0.0, azimuth::T=0.0) where T =  new(pointx, pointy, directionx, directiony, index_i, index_j, length, altitude, azimuth)
+    function ResultRay{T}(n::Int) where {T<:AbstractFloat}
+        pointx = zeros(T, n)
+        pointy = zeros(T, n)
+        directionx = zeros(T, n)
+        directiony = zeros(T, n)
+        index_i = zeros(Int, n)
+        index_j = zeros(Int, n)
+        length = zeros(T, n)
+        altitude = zeros(T, n)
+        azimuth = zeros(T, n)
+
+        return new{n,T,typeof(pointx),typeof(index_i)}(pointx, pointy,
+                              directionx, directiony,
+                              index_i, index_j,
+                              length, altitude,
+                              azimuth)
+    end
+
+    #ResultRay{T}(directionx::T=0.0, directiony::T=0.0, pointx::T=0.0, pointy::T=0.0,
+    #              index_i::Int=0, index_j::Int=0, length::T=0.0,
+    #              altitude::T=0.0, azimuth::T=0.0) where T =  new(pointx, pointy, directionx, directiony, index_i, index_j, length, altitude, azimuth)
 end
 
+ Base.show(io::IO, ::MIME"text/plain", r::ResultRay{T}) where {T} = begin
+    print(io, "ResultRay{", T, "}")
+ end
 
-"""
-  $SIGNATURES
-Get the intersection point and direction of a `ResultRay` as a 2D vector.
-Returns a `SVector{2,T}` where `T` is the type of the ray's coordinates.
-"""
-getpoint(r::ResultRay{T}) where {T} = SVector{2,T}(r.intersection_pointx, r.intersection_pointy)
-"""
-  $SIGNATURES
-Get the intersection direction of a `ResultRay` as a 2D vector.
-Returns a `SVector{2,T}` where `T` is the type of the ray's direction.
-"""
-getdirection(r::ResultRay{T}) where {T} = SVector{2,T}(r.intersection_directionx, r.intersection_directiony)
+TOEXP=Symbol[]
 
+for prop in (:pointx, :pointy, :directionx, :directiony, :index_i, :index_j, :length, :altitude, :azimuth)
+    getfunc = Symbol("get", prop)
+    TT      = :T
+    docstr_get = """
+    `$getfunc(r::ResultRay, int::Int)`
+    Return the `:$prop` field of the `ResultRay`.
+    """
+    @eval begin
+      @doc $docstr_get
+      @inline function $getfunc(r::ResultRay{M},idx::Int=1) where {M}
+        if 1<=idx<=M
+        getfield(r, $(QuoteNode(prop)))[idx]
+        else
+          throw(ArgumentError("Index out of bounds: $idx for ResultRay with length $M"))
+        end
+      end
+    end
+    push!(TOEXP, getfunc)
+    setfunc = Symbol("__set", prop, "!")
+    docstr_set = """
+    `$setfunc(r::ResultRay, value)`
+    Set the `:$prop` field of the `ResultRay`.
+    """
+    @eval begin
 
-"""
-  $SIGNATURES
-Get the x or y coordinate of the intersection point of a `ResultRay`.
-- `sym::Symbol`: Either `:x` or `:y` to specify which coordinate to return.
-"""
-getpoint(r::ResultRay{T}, sym::Symbol) where {T} = if sym == :x
-    r.intersection_pointx
-elseif sym == :y
-    r.intersection_pointy
+      @doc $docstr_set
+      @inline function $setfunc(r::ResultRay{M,T}, idx::Int, value) where {M,T}
+        if 1<=idx<=M
+          r.$prop[idx] = value
+        else
+          throw(ArgumentError("Index out of bounds: $idx for ResultRay with length $M"))
+        end
+        return r
+      end
+    end
+    push!(TOEXP, setfunc)
 end
-"""
-  $SIGNATURES
-Get the x or y coordinate of the intersection point of a `ResultRay`.
-- `ind::Int`: Either `1` for x-coordinate or `2` for y-coordinate.
-"""
-getpoint(r::ResultRay{T}, ind::Int) where {T} = if ind == 1
-    r.intersection_pointx
-elseif ind == 2
-    r.intersection_pointy
-end
-
-
-"""
-  $SIGNATURES
-Get the x or y component of the intersection direction of a `ResultRay`.
-- `sym::Symbol`: Either `:x` or `:y` to specify which component to return.
-"""
-getdirection(r::ResultRay{T}, sym::Symbol) where {T} = if sym == :x
-    r.intersection_directionx
-elseif sym == :y
-    r.intersection_directiony
-end
-"""
-  $SIGNATURES
-Get the x or y component of the intersection direction of a `ResultRay`.
-- `ind::Int`: Either `1` for x-component or `2` for y-component.
-"""
-getdirection(r::ResultRay{T}, ind::Int) where {T} = if ind == 1
-    r.intersection_directionx
-elseif ind == 2
-    r.intersection_directiony
-end
-Base.show(io::IO, r::ResultRay{T}) where {T} = begin
-  println(io, "ResultRay{",T,"}($(r.intersection_pointx),$(r.intersection_pointy))")
-end
-
-"""
-  $SIGNATURES
-Get the i or j index of the wedge of a `ResultRay`.
-- `sym::Symbol`: Either `:i` or `:j` to specify which index to return.
-"""
-getwedgeindex(r::ResultRay{T}, sym::Symbol) where {T} = if sym == :i
-    r.intersection_index_i
-elseif sym == :j
-    r.intersection_index_j
-end
-"""
-  $SIGNATURES
-Get the i or j index of the wedge of a `ResultRay`.
-- `ind::Int`: Either `1` for i-index or `2` for j-index.
-"""
-getwedgeindex(r::ResultRay{T}, ind::Int) where {T} = if ind == 1
-    r.intersection_index_i
-elseif ind == 2
-    r.intersection_index_j
-end
-
-
-"""
-  $SIGNATURES
-Get the length, altitude, and azimuth of a `ResultRay`. Returns the length of the intersection in km.
-"""
-getlength(r::ResultRay{T}) where {T} = r.intersection_length
-""" $SIGNATURES
-Get the altitude and azimuth of a `ResultRay`. Returns the altitude in km.
-"""
-getaltitude(r::ResultRay{T}) where {T} = r.intersection_altitude
-"""
-  $SIGNATURES
-Get the azimuth of a `ResultRay`. Returns the azimuth angle in degrees.
-"""
-getazimuth(r::ResultRay{T}) where {T} = r.intersection_azimuth
-
-
-############################################################################################
-# Inline getters and setters for Ray2D and ResultRay (internal use)
-#############################################################################################
-
-@inline __getpointx(r::Ray2D{T}) where {T} = r.pointx
-@inline __getpointy(r::Ray2D{T}) where {T} = r.pointy
-@inline __getdirectionx(r::Ray2D{T}) where {T} = r.directionx
-@inline __getdirectiony(r::Ray2D{T}) where {T} = r.directiony
-@inline __geti(r::Ray2D{T}) where {T} = r.i
-@inline __getj(r::Ray2D{T}) where {T} = r.j
-
-
-
-const Ray2Ds{T} = StructArray{Ray2D{T}, 1}
-@inline __getpointx(r::Ray2Ds{T}, idx::Int) where {T} = r.pointx[idx]
-@inline __getpointy(r::Ray2Ds{T}, idx::Int) where {T} = r.pointy[idx]
-@inline __getdirectionx(r::Ray2Ds{T}, idx::Int) where {T} = r.directionx[idx]
-@inline __getdirectiony(r::Ray2Ds{T}, idx::Int) where {T} = r.directiony[idx]
-@inline __geti(r::Ray2Ds{T}, idx::Int) where {T} = r.i[idx]
-@inline __getj(r::Ray2Ds{T}, idx::Int) where {T} = r.j[idx]
-
-@inline __setpointx!(r::Ray2Ds{T}, idx::Int, x::T) where {T} = r.pointx[idx] = x
-@inline __setpointy!(r::Ray2Ds{T}, idx::Int, y::T) where {T} = r.pointy[idx] = y
-@inline __setdirectionx!(r::Ray2Ds{T}, idx::Int, x::T) where {T} = r.directionx[idx] = x
-@inline __setdirectiony!(r::Ray2Ds{T}, idx::Int, y::T) where {T} = r.directiony[idx] = y
-@inline __seti!(r::Ray2Ds{T}, idx::Int, i::Int) where {T} = r.i[idx] = i
-@inline __setj!(r::Ray2Ds{T}, idx::Int, j::Int) where {T} = r.j[idx] = j
-
-
-############################################################################################
-# note: RayResult are immutable, so setters are not needed
-############################################################################################
-@inline __getpointx(r::ResultRay{T}) where {T} = r.intersection_pointx
-@inline __getpointy(r::ResultRay{T}) where {T} = r.intersection_pointy
-@inline __getdirectionx(r::ResultRay{T}) where {T} = r.intersection_directionx
-@inline __getdirectiony(r::ResultRay{T}) where {T} = r.intersection_directiony
-@inline __getlength(r::ResultRay{T}) where {T} = r.intersection_length
-@inline __getaltitude(r::ResultRay{T}) where {T} = r.intersection_altitude
-@inline __getazimuth(r::ResultRay{T}) where {T} = r.intersection_azimuth
-@inline __geti(r::ResultRay{T}) where {T} = r.intersection_index_i
-@inline __getj(r::ResultRay{T}) where {T} = r.intersection_index_j
-##############
-
-const ResultRays{T}= StructArray{ResultRay{T}, 1}
-
-@inline __getpointx(r::ResultRays{T}     ,idx::Int) where {T} = r.intersection_pointx[idx]
-@inline __getpointy(r::ResultRays{T}     ,idx::Int) where {T} = r.intersection_pointy[idx]
-@inline __getdirectionx(r::ResultRays{T} ,idx::Int) where {T} = r.intersection_directionx[idx]
-@inline __getdirectiony(r::ResultRays{T} ,idx::Int) where {T} = r.intersection_directiony[idx]
-@inline __getlength(r::ResultRays{T}     ,idx::Int) where {T} = r.intersection_length[idx]
-@inline __getaltitude(r::ResultRays{T}   ,idx::Int) where {T} = r.intersection_altitude[idx]
-@inline __getazimuth(r::ResultRays{T}    ,idx::Int) where {T} = r.intersection_azimuth[idx]
-@inline __geti(r::ResultRays{T}          ,idx::Int) where {T} = r.intersection_index_i[idx]
-@inline __getj(r::ResultRays{T}          ,idx::Int) where {T} = r.intersection_index_j[idx]
-##############
-
-@inline __setpointx!(r::ResultRays{T}    ,idx::Int, x::T) where {T} = r.intersection_pointx[idx] = x
-@inline __setpointy!(r::ResultRays{T}    ,idx::Int, y::T) where {T} = r.intersection_pointy[idx] = y
-@inline __setdirectionx!(r::ResultRays{T},idx::Int, x::T) where {T} = r.intersection_directionx[idx] = x
-@inline __setdirectiony!(r::ResultRays{T},idx::Int, y::T) where {T} = r.intersection_directiony[idx] = y
-@inline __setlength!(r::ResultRays{T}    ,idx::Int, length::T) where {T} = r.intersection_length[idx] = length
-@inline __setaltitude!(r::ResultRays{T}  ,idx::Int, altitude::T) where {T} = r.intersection_altitude[idx] = altitude
-@inline __setazimuth!(r::ResultRays{T}   ,idx::Int, azimuth::T) where {T} = r.intersection_azimuth[idx] = azimuth
-@inline __seti!(r::ResultRays{T}         ,idx::Int,i::Int) where {T} = r.intersection_index_i[idx] = i
-@inline __setj!(r::ResultRays{T}         ,idx::Int,j::Int) where {T} = r.intersection_index_j[idx] = j

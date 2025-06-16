@@ -1,4 +1,13 @@
 
+###############################################################################
+# Constants for the numerical methods
+###############################################################################
+# Complement of the golden ratio
+const CGOLD = 1-1/Base.MathConstants.golden
+const GLIMIT = 100 # maximum allowed step size in the parabolic fit
+const GOLDEN = Base.MathConstants.golden
+const RGOLD = Base.MathConstants.golden-1
+const TOL= 1e-10
 ############################################################################################
 # STANDARD EARTH ELLIPSOID
 ############################################################################################

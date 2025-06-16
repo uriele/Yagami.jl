@@ -1068,14 +1068,11 @@ uuid = "6c1512a5-7034-4c39-b54a-f9774b92869c"
 version = "0.1.0-DEV"
 
     [deps.Yagami.extensions]
-    MakieExt = ["Makie", "WGLMakie", "CairoMakie", "MakieExtra"]
+    MakieExt = ["Makie"]
 
     [deps.Yagami.weakdeps]
-    CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
     Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
-    MakieExtra = "54e234d5-9986-40d8-815f-a5e42de435f6"
-    WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
-
+    
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
