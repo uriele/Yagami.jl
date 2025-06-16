@@ -1,5 +1,6 @@
 using Yagami
-using Documenter
+using Documenter, DocStringExtensions
+import Showcase
 
 DocMeta.setdocmeta!(Yagami, :DocTestSetup, :(using Yagami); recursive=true)
 
@@ -14,6 +15,11 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "YagamiCore" => "YagamiCore.md",
+        "MaterialProperties" => "MaterialProperties.md",
+        "RayTracing" => "RayTracing.md",
+        "CurtisGodson" => "CurtisGodson.md",
+
     ],
 )
 

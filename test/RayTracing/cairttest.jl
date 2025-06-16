@@ -1,8 +1,9 @@
 using Logging,LoggingExtras
 using Test
 using Yagami.RayTracing
-logfile="$(pwd())/test/RayTracing/_data/cairt.log"
-testfile="$(pwd())/test/RayTracing/_data/cairt.nc"
+logfile="$(pwd())/RayTracing/_data/cairt.log"
+testfile="$(pwd())/RayTracing/_data/cairt.nc"
+@info "Testing Cairt File: $testfile"
 problem=RayTracingProblem(testfile;logger=nothing)
 
 @test getlogger(problem) isa NullLogger

@@ -3,7 +3,7 @@ using Yagami.RayTracing
 using Yagami.YagamiCore
 using GeometryBasics
 using Yagami.MaterialProperties: celsius_to_kelvin,atm_to_pascal,kelvin_to_celsius
-
+using Logging,LoggingExtras
 using Yagami.RayTracing:__geth, __getθ
 
 @testset "Ray Data Structures" begin
@@ -21,9 +21,8 @@ end
   include("atmospheretest.jl")
 end
 
-
-testfile="_data/cairt.nc"
-
+@info "Testing Cairt File: $testfile"
+@info "isfile(testfile)=$(isfile(testfile))"
 if isfile(testfile)
   @testset "Cairt File" begin
     include("cairttest.jl")
