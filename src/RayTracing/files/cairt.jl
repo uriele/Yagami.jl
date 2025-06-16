@@ -214,5 +214,346 @@ function Base.getproperty(probl::RayTracingProblem, sym::Symbol)
   throw(ArgumentError("Property $sym not found in RayTracingProblem."))
 end
 
-
 getlogger(probl::RayTracingProblem) = getfield(probl, :__logger)
+
+############################################################################################
+# helper functions
+############################################################################################
+@inline los_scan_to_index(prob::RayTracingProblem,los::Int,scan::Int) = begin
+  nlos=prob.nlos
+  nscan=prob.nscan
+  @inline idx(los,scan)=if los<=nlos && scan<=nscan
+    los+(scan-1)*(nlos)
+  else
+    error("Invalid los or scan index. los: $los, scan: $scan, nlos: $nlos, nscan: $nscan")
+  end
+  idx(los,scan)
+end
+
+EXPCAIRTHELPERS=[:wedge_refractive,:getlogger,
+:num_wedges,:num_edges,:extrapolatetemperature,
+:extrapolatepressure,:extrapolatehumidity,:extrapolateco2ppm,:extrapolatewavelength,
+:getsatposition,:getsatdirection,:getquotetangent]
+
+"""
+   `wedge_refractive(problem::RayTracingProblem, i_theta::Int, j_h::Int;complement::Bool=false)`
+Returns the refractive index at a given wedge edge specified by indices `i_theta` and `j_h` in a `RayTracingProblem`.
+# Arguments:
+- `problem::RayTracingProblem`: The ray tracing problem instance.
+- `i_theta::Int`: The index of the theta knot (angle).
+- `j_h::Int`: The index of the h knot (height).
+# Key Arguments:
+- `complement::Bool`: If true, returns the complement of the refractive index (n-1), that can be more useful in some cases (default is false).
+
+# Returns:
+- `Tuple{Tuple{Float64, Float64}, Float64}`: A tuple containing the theta and h values at the specified indices and the refractive index.
+# Example:
+```julia
+julia> wedge_refractive(prob, 1, 1) # returns the refractive index for i_theta=1 and j_h=1
+((0.0, 0.0), 1.0003)
+```
+"""
+function wedge_refractive(problem::RayTracingProblem, i_theta::Int, j_h::Int;complement::Bool=false)
+  knots_h = problem.temperature.knots_h
+  knots_theta = problem.temperature.knots_θ[1:end-1]
+  N, M = length(knots_h), length(knots_theta)
+  if i_theta < 1 || i_theta > M || j_h < 1 || j_h > N
+    error("Invalid indices: i_theta=$i_theta, j_h=$j_h, M=$M, N=$N")
+  end
+
+  n= problem.refractive[i_theta, j_h]
+  if complement
+    n = n - 1
+  end
+  return (knots_theta[i_theta], knots_h[j_h]), n
+end
+
+for value in (:temperature, :pressure, :humidity, :co2ppm, :wavelength)
+  func= Symbol("node_", value)
+  push!(EXPCAIRTHELPERS, func)
+  string_doc = """
+    `$func(prob::RayTracingProblem, i_theta::Int, j_h::Int)`
+    Returns the nodes of the $value for a given `RayTracingProblem` at specified wedge edge.
+    # Arguments:
+    - `prob::RayTracingProblem`: The ray tracing problem instance.
+    - `i_theta::Int`: The index of the theta knot (angle).
+    - `j_h::Int`: The index of the h knot (height).
+    # Returns:
+    - `Tuple{Int,Int},T`: A tuple containing the theta and h values at the specified indices and the value of $value.
+
+    # Example:
+    ```julia
+    julia> $func(prob, 1, 1) # returns the nodes for i_theta=1 and j_h=1
+    (0.0, 0.0, 273.15)
+    ```
+    """
+    @eval begin
+    @doc $string_doc
+    @inline function $func(problem::RayTracingProblem, i_theta::Int, j_h::Int)
+      knots_h = problem.temperature.knots_h
+      knots_theta = problem.temperature.knots_θ[1:end-1]
+      N, M = length(knots_h), length(knots_theta)
+      if i_theta < 1 || i_theta > M || j_h < 1 || j_h > N
+        error("Invalid indices: i_theta=$i_theta, j_h=$j_h, M=$M, N=$N")
+      end
+      return (knots_theta[i_theta], knots_h[j_h]), problem.$value(float(knots_theta[i_theta]), float(knots_h[j_h]))
+    end
+  end
+end
+
+"""
+   `numwedges(prob::RayTracingProblem)`
+Returns the number of wedges in a `RayTracingProblem` as N x M, where N is the number of angle knots and M is the number of height knots.
+# Arguments:
+- `prob::RayTracingProblem`: The ray tracing problem instance.
+# Returns:
+- `Tuple{Int, Int}`: A tuple containing the number of wedges (N, M).
+
+## Note:
+due to the circularity of the matrix along the theta dimension, the number of wedges in the theta dimension is the same
+as the number of edges in the theta direction, while the number of wedges in the height dimension is one less than the number of edges in the h direction.
+
+# Example:
+```julia
+julia> numwedges(prob) # returns the number of wedges in the problem
+(10, 20)
+```
+See also: [`num_edges`](@ref)
+"""
+num_wedges(prob::RayTracingProblem) = size(prob.refractive,1)-1,size(prob.refractive,2)
+"""
+   `num_edges(prob::RayTracingProblem)`
+Returns the number of edges in a `RayTracingProblem` as N x M, where N is the number of angle knots and M is the number of height knots.
+# Arguments:
+- `prob::RayTracingProblem`: The ray tracing problem instance.
+# Returns:
+- `Tuple{Int, Int}`: A tuple containing the number of edges (N, M).
+# Note:
+Due to the circularity of the matrix along the theta dimension, the number of edges in the theta direction is one less than the number of knots in the theta direction, while the number of edges in the height dimension is one less than the number of knots in the height direction.
+# Example:
+```julia
+julia> num_edges(prob) # returns the number of edges in the problem
+(10, 19)
+```
+See also: [`num_wedges`](@ref)
+"""
+num_edges(prob::RayTracingProblem) = size(prob.temperature.knots_θ,1)-1,size(prob.temperature.knots_h,1)
+
+
+"""
+   `extrapolatetemperature(prob::RayTracingProblem, θ::Real, h::Real)`
+   `extrapolatetemperature(prob::RayTracingProblem; theta=0.0, h=0.0)`
+Extrapolates the temperature at a given line of angle `θ` and height `h` for a given `RayTracingProblem`.
+# Arguments:
+- `prob::RayTracingProblem`: The ray tracing problem instance.
+- `θ::Real`: The angle in degree and geodesic coordinates.
+- `h::Real`: The altitude with respect to the surface in km.
+# Returns:
+- `Float64`: The extrapolated temperature in Kelvin
+
+# Key Arguments:
+- `theta::Real`: The angle in degrees (default is 0.0).
+- `h::Real`: The height in kilometers (default is 0.0).
+
+# Example:
+```julia
+julia> extrapolatetemperature(prob, 10.0, 5.0) # angle in degrees, height in km
+273.15
+julia> extrapolatetemperature(prob; theta=10.0, h=5.0) # using keyword arguments
+275.15
+julia> extrapolatetemperature(prob) # defaults to theta=0.0, h=0.0
+278.15
+```
+"""
+extrapolatetemperature(prob::RayTracingProblem,θ::Real,h::Real)=prob.temperature(float(θ),float(h))
+extrapolatetemperature(prob::RayTracingProblem;theta::Real=0.0,h::Real=0.0)=extrapolatetemperature(prob,theta,h)
+"""
+   `extrapolatepressure(prob::RayTracingProblem, θ::Real, h::Real)`
+    `extrapolatepressure(prob::RayTracingProblem; theta=0.0, h=0.0)`
+Extrapolates the pressure at a given line of angle `θ` and height `h` for a given `RayTracingProblem`.
+# Arguments:
+- `prob::RayTracingProblem`: The ray tracing problem instance.
+- `θ::Real`: The angle in degree and geodesic coordinates.
+- `h::Real`: The altitude with respect to the surface in km.
+# Returns:
+- `Float64`: The extrapolated pressure in Pa
+
+# Key Arguments:
+- `theta::Real`: The angle in degrees (default is 0.0).
+- `h::Real`: The height in kilometers (default is 0.0).
+
+# Example:
+```julia
+julia
+> extrapolatepressure(prob, 10.0, 5.0) # angle in degrees, height in km
+101325.0
+julia> extrapolatepressure(prob; theta=10.0, h=5.0) # using keyword arguments
+101325.0
+julia> extrapolatepressure(prob) # defaults to theta=0.0, h=0.0
+101325.0
+```
+
+"""
+extrapolatepressure(prob::RayTracingProblem,θ::Real,h::Real)=prob.pressure(float(θ),float(h))
+extrapolatepressure(prob::RayTracingProblem;theta::Real=0.0,h::Real=0.0)=extrapolatepressure(prob,theta,h)
+
+"""
+    `extrapolatehumidity(prob::RayTracingProblem, θ::Real, h::Real)`
+    `extrapolatehumidity(prob::RayTracingProblem; theta=0.0, h=0.0)`
+Extrapolates the humidity at a given line of angle `θ` and height `h` for a given `RayTracingProblem`.
+# Arguments:
+- `prob::RayTracingProblem`: The ray tracing problem instance.
+- `θ::Real`: The angle in degree and geodesic coordinates.
+- `h::Real`: The altitude with respect to the surface in km.
+# Returns:
+- `Float64`: The extrapolated humidity in %
+"""
+extrapolatehumidity(prob::RayTracingProblem,θ::Real,h::Real)=prob.humidity(float(θ),float(h))*100
+extrapolatehumidity(prob::RayTracingProblem;theta::Real=0.0,h::Real=0.0)=extrapolatehumidity(prob,theta,h)
+
+
+"""
+    `extrapolateco2ppm(prob::RayTracingProblem, θ::Real, h::Real)`
+    `extrapolateco2ppm(prob::RayTracingProblem; theta=0.0, h=0.0)`
+Extrapolates the CO2 concentration in ppm at a given line of angle `θ` and height `h` for a given `RayTracingProblem`.
+# Arguments:
+- `prob::RayTracingProblem`: The ray tracing problem instance.
+- `θ::Real`: The angle in degree and geodesic coordinates.
+- `h::Real`: The altitude with respect to the surface in km.
+# Returns:
+- `Float64`: The extrapolated CO2 concentration in ppm
+
+# Key Arguments:
+- `theta::Real`: The angle in degrees (default is 0.0).
+- `h::Real`: The height in kilometers (default is 0.0).
+
+# Example:
+```julia
+julia> extrapolateco2ppm(prob, 10.0, 5.0) # angle in degrees, height in km
+400.0
+julia> extrapolateco2ppm(prob; theta=10.0, h=5.0) # using keyword arguments
+400.0
+julia> extrapolateco2ppm(prob) # defaults to theta=0.0, h=0.0
+400.0
+```
+"""
+extrapolateco2ppm(prob::RayTracingProblem,θ::Real,h::Real)=prob.co2ppm(float(θ),float(h))
+extrapolateco2ppm(prob::RayTracingProblem;theta::Real=0.0,h::Real=0.0)=extrapolateco2ppm(prob,theta,h)
+"""
+    `extrapolatewavelength(prob::RayTracingProblem, θ::Real, h::Real)`
+    `extrapolatewavelength(prob::RayTracingProblem; theta=0.0, h=0.0)`
+Extrapolates the wavelength at a given line of angle `θ` and height `h` for a given `RayTracingProblem`.
+# Arguments:
+- `prob::RayTracingProblem`: The ray tracing problem instance.
+- `θ::Real`: The angle in degree and geodesic coordinates.
+- `h::Real`: The altitude with respect to the surface in km.
+# Returns:
+- `Float64`: The extrapolated wavelength in μm
+
+# Key Arguments:
+- `theta::Real`: The angle in degrees (default is 0.0).
+- `h::Real`: The height in kilometers (default is 0.0).
+
+# Example:
+```julia
+julia> extrapolatewavelength(prob, 10.0, 5.0) # angle in degrees, height in km
+1.0
+julia> extrapolatewavelength(prob; theta=10.0, h=5.0) # using keyword arguments
+1.0
+julia> extrapolatewavelength(prob) # defaults to theta=0.0, h=0.0
+1.0
+```
+"""
+extrapolatewavelength(prob::RayTracingProblem,θ::Real,h::Real)=prob.wavelength(float(θ),float(h))
+extrapolatewavelength(prob::RayTracingProblem;theta::Real=0.0,h::Real=0.0)=extrapolatewavelength(prob,theta,h)
+
+"""
+  `getsatposition(prob::RayTracingProblem, los::Int, scan::Int)`
+  `getsatposition(prob::RayTracingProblem; los=1, scan=1)`
+Returns the satellite initial position for a given line of sight (los) and scan index in a `RayTracingProblem`.
+# Arguments:
+- `prob::RayTracingProblem`: The ray tracing problem instance.
+- `los::Int`: The line of sight index.
+- `scan::Int`: The scan index.
+# Returns:
+- `Vector{Float64}`: A vector containing the x and y coordinates of the satellite position.
+
+# Key Arguments:
+- `los::Int`: The line of sight index (default is 1).
+- `scan::Int`: The scan index (default is 1).
+
+# Example:
+```julia
+julia
+> getsatposition(prob, 1, 1) # returns the position for los=1 and scan=1
+[100.0, 200.0]
+julia> getsatposition(prob; los=1, scan=1) # using keyword arguments
+[100.0, 200.0]
+julia> getsatposition(prob) # defaults to los=1, scan=1
+[100.0, 200.0]
+"""
+getsatposition(prob::RayTracingProblem,los::Int,scan::Int) = begin
+  ii=los_scan_to_index(prob,los,scan)
+  return [prob.pointx[ii], prob.pointy[ii]]
+end
+getsatposition(prob::RayTracingProblem;los::Int=1,scan::Int=1) = getsatposition(prob,los,scan)
+
+
+"""
+  `getsatdirection(prob::RayTracingProblem, los::Int, scan::Int)`
+  `getsatdirection(prob::RayTracingProblem; los=1, scan=1)`
+Returns the satellite direction (from the nadir angle) for a given line of sight (los) and scan index in a `RayTracingProblem`.
+# Arguments:
+- `prob::RayTracingProblem`: The ray tracing problem instance.
+- `los::Int`: The line of sight index.
+- `scan::Int`: The scan index.
+# Returns:
+- `Vector{Float64}`: A vector containing the x and y components of the satellite direction.
+
+# Key Arguments:
+- `los::Int`: The line of sight index (default is 1).
+- `scan::Int`: The scan index (default is 1).
+# Example:
+```julia
+julia> getsatdirection(prob, 1, 1) # returns the direction for los=1 and scan=1
+[0.1, 0.2]
+julia> getsatdirection(prob; los=1, scan=1) # using keyword arguments
+[0.1, 0.2]
+julia> getsatdirection(prob) # defaults to los=1, scan=1
+[0.1, 0.2]
+````
+"""
+getsatdirection(prob::RayTracingProblem,los::Int,scan::Int) = begin
+  ii=los_scan_to_index(prob,los,scan)
+  return [prob.directionx[ii], prob.directiony[ii]]
+end
+getsatdirection(prob::RayTracingProblem;los::Int=1,scan::Int=1) = getsatdirection(prob,los,scan)
+
+"""
+  `getquotetangent(prob::RayTracingProblem, los::Int, scan::Int)`
+  `getquotetangent(prob::RayTracingProblem; los=1, scan=1)`
+Returns the tangent point coordinates for a given line of sight (los) and scan index in a `RayTracingProblem`.
+# Arguments:
+- `prob::RayTracingProblem`: The ray tracing problem instance.
+- `los::Int`: The line of sight index.
+- `scan::Int`: The scan index.
+# Returns:
+- `Tuple{Float64, Float64}`: A tuple containing the tangent height and azimuth angle at the specified los and scan.
+# Key Arguments:
+- `los::Int`: The line of sight index (default is 1).
+- `scan::Int`: The scan index (default is 1).
+# Example:
+```julia
+julia> getquotetangent(prob, 1, 1) # returns the tangent point for los=1 and scan=1
+(100.0, 45.0)
+julia> getquotetangent(prob; los=1, scan=1) # using keyword arguments
+(100.0, 45.0)
+julia> getquotetangent(prob) # defaults to los=1, scan=1
+(100.0, 45.0)
+```
+"""
+getquotetangent(prob::RayTracingProblem,los::Int,scan::Int) = begin
+  ii=los_scan_to_index(prob,los,scan)
+  return (prob.tangent_h[ii], prob.tangent_θ[ii])
+end
+getquotetangent(prob::RayTracingProblem;los::Int=1,scan::Int=1) = getquotetangent(prob,los,scan)

@@ -72,6 +72,10 @@ for model in EXISTINGMODELS
   end
 end
 
+
+for func in EXPCAIRTHELPERS
+  @eval export $func
+end
 export create_hlevelset, create_radii,create_atmosphere,grid_refractiveindex
 
 

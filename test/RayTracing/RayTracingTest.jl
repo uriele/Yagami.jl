@@ -20,3 +20,12 @@ end
 @testset "Create atmosphere" begin
   include("atmospheretest.jl")
 end
+
+
+testfile="_data/cairt.nc"
+
+if isfile(testfile)
+  @testset "Cairt File" begin
+    include("cairttest.jl")
+  end
+end

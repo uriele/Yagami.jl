@@ -1,7 +1,6 @@
 using Yagami.RayTracing
 using Yagami.RayTracing:__setpointx!, __setpointy!, __setdirectionx!, __setdirectiony!, __seti!, __setj!,__setaltitude!,__setazimuth!,__setlength!
-using Yagami.RayTracing:__getaltitude, __getpointx, __getpointy,
-__getdirectionx, __getdirectiony, __geti, __getj,__getlength,__getazimuth
+using Yagami.RayTracing: __getpointx, __getpointy,__getdirectionx, __getdirectiony
 using Yagami:MAJORAXIS
 using StructArrays
 using Test
