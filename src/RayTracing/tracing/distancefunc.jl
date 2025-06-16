@@ -50,7 +50,6 @@ end
 end
 ############################################################################################
 # Getters and Setters for DistanceFunc
-
 for (propr,defval,proptype) in zip(DISTFUNCPROP, DFDISTFUNCPROP, DISTTYPEPROP)
     getfunc = Symbol("get", propr)
 
@@ -113,13 +112,15 @@ end
 @forward Zbrent.f getpoint, getdirection, gethlims, getθlims
 @forward Zbrent.f __setpoint!, __setdirection!, __sethlims!, __setθlims!
 @forward Zbrent.f __getinnerf
-@inline function (df::DistanceFunc{F,T})(t) where {F,T<:AbstractFloat}
+
+
+function (df::DistanceFunc{F,T})(t) where {F,T<:AbstractFloat}
   isDescending = getdescending(df)
 
   pointx = getpointx(df)
   pointy = getpointy(df)
   x   =   pointx + t * getdirectionx(df)
-  y   =   pointy + t * getdirectionx(df)
+  y   =   pointy + t * getdirectiony(df)
   h,_ = __getinnerf(df,x ,y)
 
   htest= if isDescending

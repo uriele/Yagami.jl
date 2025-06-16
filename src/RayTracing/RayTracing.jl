@@ -4,15 +4,19 @@ using Logging,LoggingExtras
 using DocStringExtensions
 using StructArrays
 using Lazy: @forward  # to forward methods of DistanceFunc to Zbrent
+using Moshi.Match: @match
+
 using Reexport
 include("../YagamiCore/YagamiCore.jl")
 include("../MaterialProperties/MaterialProperties.jl")
 using .YagamiCore
+using .YagamiCore: infologger
 using .MaterialProperties
 @reexport using ..MaterialProperties: Mathar160_240, Mathar075_141, Mathar043_052, Mathar028_042, Mathar013_025
 @reexport using ..MaterialProperties: Ciddor, Mathar, Carlotti, AirModel
 @reexport using ..MaterialProperties: refractive_index, refractive_index!
 
+@reexport using ..YagamiCore: bracketmin, findmin, Zbrent,__setbracket!
 import NaturalNeighbours.interpolate as NNinterpolate
 
 include("constants.jl")

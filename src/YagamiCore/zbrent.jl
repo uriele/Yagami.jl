@@ -138,10 +138,11 @@ Bracket the function `z.f` to find a minimum. This function sets the initial bou
 It uses the golden section search to find a point where the function value is lower than the initial bounds.
 """
 function bracketmin(z::Zbrent{F,T}) where {F,T<:AbstractFloat}
-  ax=0.0
+  ax=z.tol
   fa = z.f(ax)
 
   bx= ax+GOLDEN*fa
+
   fu::T = 0
   fb = z.f(bx)
   # @info "ax: $ax, bx: $bx, fa: $fa, fb: $fb"

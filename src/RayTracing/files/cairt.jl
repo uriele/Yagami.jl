@@ -38,7 +38,7 @@ end
 
 
 
-struct RayTracingProblem{T,MT<:MeanType,AM<:AirModel,EA<:EarthApproximation,ATM<:AtmosphereSetting,V<:AbstractVector{T},M<:AbstractMatrix{T}}
+struct RayTracingProblem{T,MT<:MeanType,AM<:AirModel,EA<:EarthApproximation,ATM<:AtmosphereSetting,V<:AbstractVector{T},M<:AbstractMatrix{T},L<:AbstractLogger}
   filename::String
   meantype::MT
   model::AM
@@ -55,14 +55,23 @@ struct RayTracingProblem{T,MT<:MeanType,AM<:AirModel,EA<:EarthApproximation,ATM<
   tangent_θ:: V
   nscans::Int
   nlos::Int
+  __logger::L
+
 
   function RayTracingProblem(filename::String;
     meantype::MT=GeometricMean(), model::AM=Ciddor(),
     earthmodel::EA=Fukushima(),
-    logger::L=NullLogger(),
+    logger=nothing,
     ) where {MT<:MeanType,AM<:AirModel,
-    EA<:EarthApproximation,L<:AbstractLogger}
+    EA<:EarthApproximation}
     nc=NCDataset(filename)
+
+    logger = @match logger begin
+      ::AbstractString => infologger(logger)
+      ::AbstractLogger => logger
+      _ => NullLogger()
+    end
+
     # number of scans
     nscans = nc.dim["nscans"]
     nlos   = nc.dim["nlos"]
@@ -109,7 +118,7 @@ struct RayTracingProblem{T,MT<:MeanType,AM<:AirModel,EA<:EarthApproximation,ATM<
       @inbounds for i in axes(pointsy,1)
         pointsx[i,j] = pointx
         pointsy[i,j] = pointy
-        directionsx[i,j],directionsy[i,j] = nadir_angle_normal(normalx,normaly,-view_angle[i,j])
+        directionsx[i,j],directionsy[i,j] = nadir_angle_normal(-normalx,-normaly,-view_angle[i,j])
         with_logger(logger) do
           @info "$(numshort(i))  $(numshort(j))  $(numshort(pointx))  $(numshort(pointy))  $(numshort(directionsx[i,j]))  $(numshort(directionsy[i,j]))  $(numshort(view_angle[i,j])) $(numshort(tangent_h[i,j]))  $(numshort(tangent_θ[i,j]))"
         end
@@ -171,14 +180,15 @@ struct RayTracingProblem{T,MT<:MeanType,AM<:AirModel,EA<:EarthApproximation,ATM<
       refractive_info(refractive)
     end
 
+    L= typeof(logger)
 
-    new{T,MT,AM,EA,ATM,V,M}(
+    new{T,MT,AM,EA,ATM,V,M,L}(
       filename, meantype, model, earthmodel,
       atmosphere,refractive,
       pointsx,pointsy,
       directionsx, directionsy,
       tangent_h,tangent_θ,
-      nscans,nlos )
+      nscans,nlos,logger )
   end
 end
 Base.show(io::IO,::Type{<:RayTracingProblem{T}}) where T = print(io, "RayTracingProblem{$T}")
@@ -203,3 +213,6 @@ function Base.getproperty(probl::RayTracingProblem, sym::Symbol)
   end
   throw(ArgumentError("Property $sym not found in RayTracingProblem."))
 end
+
+
+getlogger(probl::RayTracingProblem) = getfield(probl, :__logger)
