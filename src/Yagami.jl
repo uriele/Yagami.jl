@@ -41,4 +41,6 @@ ray2_altitude_bowring_verbose, ray2_altitude_fukushima_verbose
 ray2_angle_bowring, ray2_angle_fukushima,
 ray2_altitude_bowring, ray2_altitude_fukushima
 
+
+@reexport using .CurtisGodson: QuadraturePoints, get_quadrature_points, linintegral
 end

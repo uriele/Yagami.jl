@@ -8,7 +8,7 @@ mutable struct Zbrent{F,T<:AbstractFloat}
     b::T   # upper bound of the bracket
     tol::T # tolerance for convergence
     itermax::Int # maximum number of iterations
-    __iter::Int  # number of iterations performed at the last call of findmin
+    __iter::Int  # number of iterations performed at the last call of findraymin
 end
 
 
@@ -46,12 +46,12 @@ end
 ##################################################################
 
 """
-    findmin(zb::Zbrent{F,T}) where {F,T<:AbstractFloat}
+    findraymin(zb::Zbrent{F,T}) where {F,T<:AbstractFloat}
 Find the minimum of the function `zb.f` using the Brent's method.
 The function `zb.f` must be defined such that it returns a value for a given input `x`.
 The method uses a combination of bisection, secant, and inverse quadratic interpolation to find the minimum.
 """
-function findmin(zb::Zbrent{F,T}) where {F,T<:AbstractFloat}
+function findraymin(zb::Zbrent{F,T}) where {F,T<:AbstractFloat}
     ax = zb.a
     bx = zb.x
     cx = zb.b

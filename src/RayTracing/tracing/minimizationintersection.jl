@@ -200,7 +200,7 @@ end
       bracketmin(zb) # recalculate the bracket
     end
     # solve
-    findmin(zb) # find the minimum
+    findraymin(zb) # find the minimum
 
 
     len_t = zb.x # get the length of the ray

@@ -16,7 +16,7 @@ using .MaterialProperties
 @reexport using ..MaterialProperties: Ciddor, Mathar, Carlotti, AirModel
 @reexport using ..MaterialProperties: refractive_index, refractive_index!
 
-@reexport using ..YagamiCore: bracketmin, findmin, Zbrent,__setbracket!
+@reexport using ..YagamiCore: bracketmin, findraymin, Zbrent,__setbracket!
 import NaturalNeighbours.interpolate as NNinterpolate
 
 include("constants.jl")

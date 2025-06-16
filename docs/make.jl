@@ -1,10 +1,11 @@
 using Yagami
-using Documenter, DocStringExtensions
-import Showcase
+using Documenter
+using DocStringExtensions
 
 DocMeta.setdocmeta!(Yagami, :DocTestSetup, :(using Yagami); recursive=true)
 
 makedocs(;
+    checkdocs = :none,
     modules=[Yagami],
     authors="Marco <m1menari@eng.ucsd.edu> and contributors",
     sitename="Yagami.jl",
@@ -18,8 +19,7 @@ makedocs(;
         "YagamiCore" => "YagamiCore.md",
         "MaterialProperties" => "MaterialProperties.md",
         "RayTracing" => "RayTracing.md",
-        "CurtisGodson" => "CurtisGodson.md",
-
+        "CurtisGodson" => "CurtisGodson.md"
     ],
 )
 

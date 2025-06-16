@@ -13,7 +13,7 @@ module YagamiCore
   export WGS84MAJORAXIS,WGS84MINORAXIS, WGS84ECCENTRICITY², WGS84ECCENTRICITY, WGS84NORMALIZEMINORAXIS, WGS84COMPLECCENTRICITY²
   export setdatum!,setmajoraxis!,setminoraxis!,seteccentricity²!
 
-  export Zbrent, findmin, bracketmin
+  export Zbrent, findraymin, bracketmin
   export clampangle,intersectionrayray
 
   # find angle from nadir and limb convention
