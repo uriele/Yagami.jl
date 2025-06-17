@@ -7,7 +7,7 @@ using Logging,LoggingExtras
 using Yagami.RayTracing:__geth, __getθ
 
 @testset "Ray Data Structures" begin
-  include("tracingtest.jl")
+  include("structurestest.jl")
 end
 @testset "Atmosphere Interpolation" begin
   include("interpolationtest.jl")
@@ -21,10 +21,18 @@ end
   include("atmospheretest.jl")
 end
 
+
+logfile="$(pwd())/RayTracing/_data/cairt.log"
+testfile="$(pwd())/RayTracing/_data/cairt.nc"
+
 @info "Testing Cairt File: $testfile"
 @info "isfile(testfile)=$(isfile(testfile))"
 if isfile(testfile)
   @testset "Cairt File" begin
     include("cairttest.jl")
   end
+  @testset "RayTracing" begin
+    include("tracingtest.jl")
+  end
+
 end

@@ -15,6 +15,7 @@ mutable struct DistanceFunc{F,T<:AbstractFloat}
     # store current i,j to pass easily the information about the wedge
     i ::Int
     j:: Int
+    n:: T
     # use to compute the correct distance for the iteration and for the normal
     descending::Bool
     # find automatically if it hits a level or a radii to compute the normal
@@ -23,7 +24,7 @@ mutable struct DistanceFunc{F,T<:AbstractFloat}
     @inline function DistanceFunc(f::F=___altitudeangle_fukushima, pointx::T=DFPOINTX, pointy::T=DFPOINTY,
                                      directionx::T=DFDIRECTIONX,directiony::T=DFDIRECTIONY,
                                      hmin::T=DFHMIN, hmax::T=DFHMAX,
-                                     θmin::T=DFTHMIN, θmax::T=DFTHMAX) where {F,T<:AbstractFloat}
+                                     θmin::T=DFTHMIN, θmax::T=DFTHMAX,n::T=FREESPACE) where {F,T<:AbstractFloat}
 
       # Normalize direction vector
       direction_norm = hypot(directionx, directiony)
@@ -31,7 +32,7 @@ mutable struct DistanceFunc{F,T<:AbstractFloat}
       directiony /= direction_norm
 
       return new{F,T}(f, pointx, pointy, directionx, directiony, hmin, hmax, θmin, θmax,
-                      DFI, DFJ, DFDESCENDING, DFISLVL)
+                      DFI, DFJ,n, DFDESCENDING, DFISLVL)
     end
 end
 
@@ -39,7 +40,7 @@ Base.show(io::IO, d::DistanceFunc{F,T}) where {F,T} = print(io, "DistanceFunc{T}
 Base.propertynames(::DistanceFunc) = DISTFUNCPROP
 
 @inline function Base.getproperty(df::DistanceFunc, sym::Symbol)
-  for sym in DISTFUNCPROP
+  if sym ∈ DISTFUNCPROP
       return getfield(df, sym)
   end
 end
@@ -114,7 +115,7 @@ end
 @forward Zbrent.f __getinnerf
 
 
-function (df::DistanceFunc{F,T})(t) where {F,T<:AbstractFloat}
+function (df::DistanceFunc{F,T})(t::T) where {F,T<:AbstractFloat}
   isDescending = getdescending(df)
 
   pointx = getpointx(df)
@@ -128,5 +129,6 @@ function (df::DistanceFunc{F,T})(t) where {F,T<:AbstractFloat}
   else
     gethmax(df)
   end
-  abs(htest-h)
+  dh=abs(htest-h)
+
 end

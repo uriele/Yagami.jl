@@ -14,11 +14,11 @@ const DFHMIN::Float64 = 0.0
 const DFHMAX::Float64 = 120.0
 const DFTHMIN::Float64 = -Inf
 const DFTHMAX::Float64 = Inf
-
+const DFFREESPACE::Float64 = 1.0
 # note: f not directly accessible
-const DISTFUNCPROP  = (:pointx,   :pointy,  :directionx, :directiony,  :hmin,  :hmax,   :θmin,   :θmax, :i, :j, :descending, :islevel)
-const DFDISTFUNCPROP      = (DFPOINTX, DFPOINTY, DFDIRECTIONX, DFDIRECTIONY,DFHMIN, DFHMAX, DFTHMIN, DFTHMAX,DFI,DFJ,DFDESCENDING,  DFISLVL)
-const DISTTYPEPROP        = (:T, :T, :T, :T, :T, :T, :T, :T, :Int, :Int, :Bool, :Bool)
+const DISTFUNCPROP  = (:pointx,   :pointy,  :directionx, :directiony,  :hmin,  :hmax,   :θmin,   :θmax, :i, :j, :n, :descending, :islevel)
+const DFDISTFUNCPROP      = (DFPOINTX, DFPOINTY, DFDIRECTIONX, DFDIRECTIONY,DFHMIN, DFHMAX, DFTHMIN, DFTHMAX,DFI,DFJ,DFFREESPACE,DFDESCENDING,  DFISLVL)
+const DISTTYPEPROP        = (:T, :T, :T, :T, :T, :T, :T, :T, :Int, :Int,:T, :Bool, :Bool)
 
 ############################################################################################
 const SMALLSHIFT= 1e-6
@@ -26,11 +26,11 @@ const SMALLSHIFT= 1e-6
 const OUTTYPE = [:(T),:(T),:(Tuple{T,T})]
 const SAFEANGLE = Expr[ :(W==0 && return Z==0 ? T(360) : (Z>0 ? T(90) : T(270))),
   :(Z == 0 && return W>0 ? 360 : 180)]
-const SAFEALTITUDE = Expr[ :(W==0 && return Z==0 ? T(0) : abs(Z)-_MINORAXIS),
-  :(Z==0 && return W==0 ? T(0) : abs(W)-_MAJORAXIS)]
+const SAFEALTITUDE = Expr[ :(W==0 && return Z==0 ? zero(T) : abs(Z)-_MINORAXIS),
+  :(Z==0 && return W==0 ? zero(T) : abs(W)-_MAJORAXIS)]
 const SAFEALTITUDEANGLE = Expr[
-    :(W==0 && return Z==0 ? (T(0),T(0)) : (abs(Z)-_MINORAXIS,Z>0 ? T(90) : T(270))),
-    :(Z==0 && return W==0 ? (T(0),T(0)) : (abs(W)-_MAJORAXIS,W>0 ? T(360) : T(180)))]
+    :(W==0 && return Z==0 ? (zero(T),zero(T)) : (abs(Z)-_MINORAXIS,Z>0 ? T(90) : T(270))),
+    :(Z==0 && return W==0 ? (zero(T),zero(T)) : (abs(W)-_MAJORAXIS,W>0 ? T(360) : T(180)))]
 const SAFERETURN = (SAFEANGLE,SAFEALTITUDE,SAFEALTITUDEANGLE)
 
 const RETURNWHAT = (:_angle,:_altitude, :_altitudeangle)
@@ -113,3 +113,9 @@ const PROBLPROPDIRECT =(:filename, :meantype, :model, :earthmodel,
 const PROBLATMPROP = (:temperature,:pressure, :humidity, :co2ppm, :wavelength)
 const PROBLKNOTS = (:knots_h, :knots_θ)
 const PROBLPROPTOTAL= vcat(PROBLPROPDIRECT..., PROBLATMPROP..., PROBLKNOTS...)
+############################################################################################
+# Constants for the RayTracingProblem
+#############################################################################################
+
+const ACCEPTABLE_TOLERANCE::Float64 =1e-5
+const FREESPACE::Float64 = 1.0 # free space index

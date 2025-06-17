@@ -1,9 +1,6 @@
 using Unitful: ustrip,uconvert,Pa,hPa,km
 using NCDatasets: NCDataset
-
-@inline numshort(n::Real;digits=3) = lpad(round(n,digits=digits),digits+4)
-@inline numshort(n::Int;digits=3) = lpad(n,digits+4)
-@inline textshort(n::String;digits=3) = string(lpad(n,digits+4))
+using ..YagamiCore: numshort,textshort,numshortf
 
 function refractive_info(refractive)
   @info "===================================================================="
@@ -38,7 +35,11 @@ end
 
 
 
-struct RayTracingProblem{T,MT<:MeanType,AM<:AirModel,EA<:EarthApproximation,ATM<:AtmosphereSetting,V<:AbstractVector{T},M<:AbstractMatrix{T},L<:AbstractLogger}
+struct RayTracingProblem{T<:AbstractFloat,MT<:MeanType,AM<:AirModel,
+  EA<:EarthApproximation,ATM<:AtmosphereSetting,
+  V<:AbstractVector{T},
+  M<:AbstractMatrix{T},L<:AbstractLogger
+}
   filename::String
   meantype::MT
   model::AM
@@ -107,14 +108,26 @@ struct RayTracingProblem{T,MT<:MeanType,AM<:AirModel,EA<:EarthApproximation,ATM<
 
     with_logger(logger) do
       @info "Calculating points and directions for the satellite scans"
+
       @info "$(textshort("los")) $(textshort("scan")) $(textshort("x [km]")) $(textshort("y [km]")) $(textshort("dx")) $(textshort("dy")) $(textshort("view angle [°]")) $(textshort("qt h [km]")) $(textshort("qt θ [°]"))"
     end
+    a² = MAJORAXIS()*MAJORAXIS()
+    b² = MINORAXIS()*MINORAXIS()
     @inbounds for j in axes(pointsx,2)
       pointx =r_sat * cosd(θ_sat[j])
       pointy =r_sat * sind(θ_sat[j])
-      h,θ=fearth(pointx,pointy,MAJORAXIS(),MINORAXIS(),COMPLECCENTRICITY²())
-      normalx = cosd(θ)
-      normaly = sind(θ)
+      #h,θ=fearth(pointx,pointy,MAJORAXIS(),MINORAXIS(),COMPLECCENTRICITY²())
+      ############################################
+      # I do not need theta and since I know that at every point
+      # the normal is equal to
+      #  n~(x/a^2,y/b^2)/|*|  =>  n~(x/a^2*b^2,y)/|*|
+      ############################################
+      normalx = pointx/a²
+      normaly = pointy/b²
+      norm_hypot = hypot(normalx, normaly)
+      normalx /= norm_hypot
+      normaly /= norm_hypot
+      ###########################################
       @inbounds for i in axes(pointsy,1)
         pointsx[i,j] = pointx
         pointsy[i,j] = pointy
@@ -204,11 +217,11 @@ end
 Base.propertynames(::RayTracingProblem) = PROBLPROPTOTAL
 
 function Base.getproperty(probl::RayTracingProblem, sym::Symbol)
-  if sym in PROBLKNOTS
+  if sym ∈ PROBLKNOTS
     return getfield(getfield(getfield(probl,:atmosphere),:temperature), sym)
-  elseif sym in PROBLATMPROP
+  elseif sym ∈ PROBLATMPROP
     return getfield(getfield(probl,:atmosphere),sym)
-  elseif sym in PROBLPROPDIRECT
+  elseif sym ∈ PROBLPROPDIRECT
     return getfield(probl, sym)
   end
   throw(ArgumentError("Property $sym not found in RayTracingProblem."))
@@ -341,19 +354,19 @@ num_edges(prob::RayTracingProblem) = size(prob.temperature.knots_θ,1)-1,size(pr
 
 
 """
-   `extrapolatetemperature(prob::RayTracingProblem, θ::Real, h::Real)`
+   `extrapolatetemperature(prob::RayTracingProblem, θ::AbstractFloat, h::AbstractFloat)`
    `extrapolatetemperature(prob::RayTracingProblem; theta=0.0, h=0.0)`
 Extrapolates the temperature at a given line of angle `θ` and height `h` for a given `RayTracingProblem`.
 # Arguments:
 - `prob::RayTracingProblem`: The ray tracing problem instance.
-- `θ::Real`: The angle in degree and geodesic coordinates.
-- `h::Real`: The altitude with respect to the surface in km.
+- `θ::AbstractFloat`: The angle in degree and geodesic coordinates.
+- `h::AbstractFloat`: The altitude with respect to the surface in km.
 # Returns:
 - `Float64`: The extrapolated temperature in Kelvin
 
 # Key Arguments:
-- `theta::Real`: The angle in degrees (default is 0.0).
-- `h::Real`: The height in kilometers (default is 0.0).
+- `theta::AbstractFloat`: The angle in degrees (default is 0.0).
+- `h::AbstractFloat`: The height in kilometers (default is 0.0).
 
 # Example:
 ```julia
@@ -365,22 +378,22 @@ julia> extrapolatetemperature(prob) # defaults to theta=0.0, h=0.0
 278.15
 ```
 """
-extrapolatetemperature(prob::RayTracingProblem,θ::Real,h::Real)=prob.temperature(float(θ),float(h))
-extrapolatetemperature(prob::RayTracingProblem;theta::Real=0.0,h::Real=0.0)=extrapolatetemperature(prob,theta,h)
+extrapolatetemperature(prob::RayTracingProblem{T},θ::T,h::T) where {T<:AbstractFloat}=prob.temperature(float(θ),float(h))
+extrapolatetemperature(prob::RayTracingProblem{T};theta::T=0.0,h::T=0.0) where {T<:AbstractFloat}=extrapolatetemperature(prob,theta,h)
 """
-   `extrapolatepressure(prob::RayTracingProblem, θ::Real, h::Real)`
+   `extrapolatepressure(prob::RayTracingProblem, θ::AbstractFloat, h::AbstractFloat)`
     `extrapolatepressure(prob::RayTracingProblem; theta=0.0, h=0.0)`
 Extrapolates the pressure at a given line of angle `θ` and height `h` for a given `RayTracingProblem`.
 # Arguments:
 - `prob::RayTracingProblem`: The ray tracing problem instance.
-- `θ::Real`: The angle in degree and geodesic coordinates.
-- `h::Real`: The altitude with respect to the surface in km.
+- `θ::AbstractFloat`: The angle in degree and geodesic coordinates.
+- `h::AbstractFloat`: The altitude with respect to the surface in km.
 # Returns:
 - `Float64`: The extrapolated pressure in Pa
 
 # Key Arguments:
-- `theta::Real`: The angle in degrees (default is 0.0).
-- `h::Real`: The height in kilometers (default is 0.0).
+- `theta::AbstractFloat`: The angle in degrees (default is 0.0).
+- `h::AbstractFloat`: The height in kilometers (default is 0.0).
 
 # Example:
 ```julia
@@ -394,38 +407,38 @@ julia> extrapolatepressure(prob) # defaults to theta=0.0, h=0.0
 ```
 
 """
-extrapolatepressure(prob::RayTracingProblem,θ::Real,h::Real)=prob.pressure(float(θ),float(h))
-extrapolatepressure(prob::RayTracingProblem;theta::Real=0.0,h::Real=0.0)=extrapolatepressure(prob,theta,h)
+extrapolatepressure(prob::RayTracingProblem{T},θ::T,h::T) where {T<:AbstractFloat} =prob.pressure(float(θ),float(h))
+extrapolatepressure(prob::RayTracingProblem{T};theta::T=zero(T),h::T=zero(T)) where {T<:AbstractFloat} =extrapolatepressure(prob,theta,h)
 
 """
-    `extrapolatehumidity(prob::RayTracingProblem, θ::Real, h::Real)`
+    `extrapolatehumidity(prob::RayTracingProblem, θ::AbstractFloat, h::AbstractFloat)`
     `extrapolatehumidity(prob::RayTracingProblem; theta=0.0, h=0.0)`
 Extrapolates the humidity at a given line of angle `θ` and height `h` for a given `RayTracingProblem`.
 # Arguments:
 - `prob::RayTracingProblem`: The ray tracing problem instance.
-- `θ::Real`: The angle in degree and geodesic coordinates.
-- `h::Real`: The altitude with respect to the surface in km.
+- `θ::AbstractFloat`: The angle in degree and geodesic coordinates.
+- `h::AbstractFloat`: The altitude with respect to the surface in km.
 # Returns:
 - `Float64`: The extrapolated humidity in %
 """
-extrapolatehumidity(prob::RayTracingProblem,θ::Real,h::Real)=prob.humidity(float(θ),float(h))*100
-extrapolatehumidity(prob::RayTracingProblem;theta::Real=0.0,h::Real=0.0)=extrapolatehumidity(prob,theta,h)
+extrapolatehumidity(prob::RayTracingProblem{T},θ::T,h::T) where {T<:AbstractFloat} =prob.humidity(float(θ),float(h))*100
+extrapolatehumidity(prob::RayTracingProblem{T};theta::T=0.0,h::T=0.0) where {T<:AbstractFloat}=extrapolatehumidity(prob,theta,h)
 
 
 """
-    `extrapolateco2ppm(prob::RayTracingProblem, θ::Real, h::Real)`
+    `extrapolateco2ppm(prob::RayTracingProblem, θ::AbstractFloat, h::AbstractFloat)`
     `extrapolateco2ppm(prob::RayTracingProblem; theta=0.0, h=0.0)`
 Extrapolates the CO2 concentration in ppm at a given line of angle `θ` and height `h` for a given `RayTracingProblem`.
 # Arguments:
 - `prob::RayTracingProblem`: The ray tracing problem instance.
-- `θ::Real`: The angle in degree and geodesic coordinates.
-- `h::Real`: The altitude with respect to the surface in km.
+- `θ::AbstractFloat`: The angle in degree and geodesic coordinates.
+- `h::AbstractFloat`: The altitude with respect to the surface in km.
 # Returns:
 - `Float64`: The extrapolated CO2 concentration in ppm
 
 # Key Arguments:
-- `theta::Real`: The angle in degrees (default is 0.0).
-- `h::Real`: The height in kilometers (default is 0.0).
+- `theta::AbstractFloat`: The angle in degrees (default is 0.0).
+- `h::AbstractFloat`: The height in kilometers (default is 0.0).
 
 # Example:
 ```julia
@@ -437,22 +450,22 @@ julia> extrapolateco2ppm(prob) # defaults to theta=0.0, h=0.0
 400.0
 ```
 """
-extrapolateco2ppm(prob::RayTracingProblem,θ::Real,h::Real)=prob.co2ppm(float(θ),float(h))
-extrapolateco2ppm(prob::RayTracingProblem;theta::Real=0.0,h::Real=0.0)=extrapolateco2ppm(prob,theta,h)
+extrapolateco2ppm(prob::RayTracingProblem{T},θ::T,h::T) where {T<:AbstractFloat} =prob.co2ppm(float(θ),float(h))
+extrapolateco2ppm(prob::RayTracingProblem{T};theta::T=0.0,h::T=0.0) where {T<:AbstractFloat}=extrapolateco2ppm(prob,theta,h)
 """
-    `extrapolatewavelength(prob::RayTracingProblem, θ::Real, h::Real)`
+    `extrapolatewavelength(prob::RayTracingProblem, θ::AbstractFloat, h::AbstractFloat)`
     `extrapolatewavelength(prob::RayTracingProblem; theta=0.0, h=0.0)`
 Extrapolates the wavelength at a given line of angle `θ` and height `h` for a given `RayTracingProblem`.
 # Arguments:
 - `prob::RayTracingProblem`: The ray tracing problem instance.
-- `θ::Real`: The angle in degree and geodesic coordinates.
-- `h::Real`: The altitude with respect to the surface in km.
+- `θ::AbstractFloat`: The angle in degree and geodesic coordinates.
+- `h::AbstractFloat`: The altitude with respect to the surface in km.
 # Returns:
 - `Float64`: The extrapolated wavelength in μm
 
 # Key Arguments:
-- `theta::Real`: The angle in degrees (default is 0.0).
-- `h::Real`: The height in kilometers (default is 0.0).
+- `theta::AbstractFloat`: The angle in degrees (default is 0.0).
+- `h::AbstractFloat`: The height in kilometers (default is 0.0).
 
 # Example:
 ```julia
@@ -464,8 +477,8 @@ julia> extrapolatewavelength(prob) # defaults to theta=0.0, h=0.0
 1.0
 ```
 """
-extrapolatewavelength(prob::RayTracingProblem,θ::Real,h::Real)=prob.wavelength(float(θ),float(h))
-extrapolatewavelength(prob::RayTracingProblem;theta::Real=0.0,h::Real=0.0)=extrapolatewavelength(prob,theta,h)
+extrapolatewavelength(prob::RayTracingProblem{T},θ::T,h::T) where {T<:AbstractFloat} =prob.wavelength(float(θ),float(h))
+extrapolatewavelength(prob::RayTracingProblem{T};theta::T=0.0,h::T=0.0) where {T<:AbstractFloat}=extrapolatewavelength(prob,theta,h)
 
 """
   `getsatposition(prob::RayTracingProblem, los::Int, scan::Int)`

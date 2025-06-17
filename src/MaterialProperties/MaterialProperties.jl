@@ -4,6 +4,7 @@ module MaterialProperties
   using Unitful: Pa,hPa, K, °C, km, m, ustrip, uconvert,mbar,atm
   using Unitful
   using Moshi.Match: @match
+  using StaticArrays: SVector, @SVector
   abstract type AirModel end
   struct Ciddor <: AirModel end
   abstract type Mathar <: AirModel end
@@ -26,7 +27,7 @@ module MaterialProperties
   The refractive index is calculated using the specified air model and parameters.
   # Arguments
   - `model::G`: The air model to use for the calculation, which must be a subtype of `AirModel`.
-  - `params::Vararg{Real,4}`: The parameters for the refractive index calculation, which can be wavelength, temperature, pressure, and humidity.
+  - `params::Vararg{AbstractFloat,4}`: The parameters for the refractive index calculation, which can be wavelength, temperature, pressure, and humidity.
   # Returns
   - The refractive index of air at the specified wavelength and conditions.
   """
@@ -38,7 +39,7 @@ module MaterialProperties
   The refractive index is calculated using the specified air model and parameters.
   # Arguments
   - `model::G`: The air model to use for the calculation, which must be a subtype of `AirModel`.
-  - `args::Vararg{Real,4}`: The parameters for the refractive index calculation, which can be wavelength, temperature, pressure, and humidity.
+  - `args::Vararg{AbstractFloat,4}`: The parameters for the refractive index calculation, which can be wavelength, temperature, pressure, and humidity.
   # Returns
   - The refractive index of air at the specified wavelength and conditions.
   """

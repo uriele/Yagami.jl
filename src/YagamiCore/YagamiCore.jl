@@ -3,6 +3,7 @@ module YagamiCore
   using Logging, LoggingExtras
   using Unitful: km,m,ustrip,uconvert
   using CoordRefSystems
+  using Printf: @sprintf
   using Unitful: km,m, ustrip, uconvert
   @reexport using CoordRefSystems: WGS84Latest
   include("constants.jl")

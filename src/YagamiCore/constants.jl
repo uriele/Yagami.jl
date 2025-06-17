@@ -4,7 +4,8 @@
 ###############################################################################
 # Complement of the golden ratio
 const CGOLD = 1-1/Base.MathConstants.golden
-const GLIMIT = 100 # maximum allowed step size in the parabolic fit
+const GLIMIT::Float64 = 100. # maximum allowed step size in the parabolic fit
+const GLIMIT2::Float64 = 2.0 # this is a fitting constant for the problem, otherwise it overshoots
 const GOLDEN = Base.MathConstants.golden
 const RGOLD = Base.MathConstants.golden-1
 const TOL= 1e-10

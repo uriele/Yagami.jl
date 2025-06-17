@@ -1,5 +1,5 @@
 
-@inline function snellslaw(normalx::T,normaly::T, directionx::T,directiony::T, n_incident::T=T(1.0),n_transmitted::T=T(1.0)) where {T<:Real}
+@inline function snellslaw(normalx::T,normaly::T, directionx::T,directiony::T, n_incident::T=T(1.0),n_transmitted::T=T(1.0)) where {T<:AbstractFloat}
   if n_incident==n_transmitted # no bending
      return directionx, directiony
   end
@@ -15,11 +15,11 @@
   end
 end
 
-function snellslaw!(::Type{T}=Float64;normal::V,direction::V,n_incident::T=T(1.0),n_transmitted::T=T(1.0)) where {T<:Real,V<:AbstractVector{T}}
+function snellslaw!(::Type{T}=Float64;normal::V,direction::V,n_incident::T=T(1.0),n_transmitted::T=T(1.0)) where {T<:AbstractFloat,V<:AbstractVector{T}}
   return __bend_ray(n_incident,n_transmitted,normal,direction)
 end
 
-@inline function __bend_ray(n_incident::T,n_transmitted::T,normal::V,direction::V) where {T<:Real,V<:AbstractVector{T}}
+@inline function __bend_ray(n_incident::T,n_transmitted::T,normal::V,direction::V) where {T<:AbstractFloat,V<:AbstractVector{T}}
   local n01=n_incident/n_transmitted
   local n01²=n01*n01
   local cosθ_incident=-clamp(dot(direction,normal),-1,1)

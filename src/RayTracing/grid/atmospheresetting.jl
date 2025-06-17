@@ -4,17 +4,17 @@
 Create an atmosphere setting interpolation object for ray tracing.
 
 # Arguments
-- `knots_θ::AbstractVector{T}`: A vector of angles in degrees, where `T` is a subtype of `Real`.
-- `knots_h::AbstractVector{T}`: A vector of heights in kilometers, where `T` is a subtype of `Real`.
+- `knots_θ::AbstractVector{T}`: A vector of angles in degrees, where `T` is a subtype of `AbstractFloat`.
+- `knots_h::AbstractVector{T}`: A vector of heights in kilometers, where `T` is a subtype of `AbstractFloat`.
 - `temperature::AbstractMatrix{T}`: A matrix of temperature values, where each row corresponds to a level and each column corresponds to a radius.
 - `pressure::AbstractMatrix{T}`: A matrix of pressure values, where each row corresponds to a level and each column corresponds to a radius.
-- `humidity::Real` (optional): A scalar or matrix of humidity values, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
-- `co2ppm::Real` (optional): A scalar or matrix of CO2 concentration values in parts per million, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
-- `wavelength::Real` (optional): A scalar or matrix of wavelength values, default is `10.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
+- `humidity::AbstractFloat` (optional): A scalar or matrix of humidity values, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
+- `co2ppm::AbstractFloat` (optional): A scalar or matrix of CO2 concentration values in parts per million, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
+- `wavelength::AbstractFloat` (optional): A scalar or matrix of wavelength values, default is `10.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
 # Returns
 - An `AtmosphereSetting` object containing interpolated atmospheric properties for ray tracing.
 """
-struct AtmosphereSetting{N,M,T}
+struct AtmosphereSetting{N,M,T<:AbstractFloat}
   temperature::AtmInterpolate{N,M,T}
   pressure::AtmInterpolate{N,M,T}
   humidity::AtmInterpolate
@@ -24,27 +24,27 @@ end
 @generated function AtmosphereSetting(knots_θ::Vi,knots_h::Vj,
   temperature::M,pressure::M,
   humidity=0.0,co2ppm=0.0,
-  wavelength=10.0) where {T<:Real,Vi<:AbstractVector{T},Vj<:AbstractVector{T},M<:AbstractMatrix{T}}
+  wavelength=10.0) where {T<:AbstractFloat,Vi<:AbstractVector{T},Vj<:AbstractVector{T},M<:AbstractMatrix{T}}
 
   expr=Expr[]
 
   push!(expr, :(temperature = AtmInterpolate(knots_θ,knots_h,temperature)))
   push!(expr, :(pressure = AtmInterpolate(knots_θ,knots_h,pressure;logh=true)))
 
-  if humidity <: Real
+  if humidity <: AbstractFloat
     push!(expr, :(humidity = AtmInterpolate([knots_θ[1],knots_θ[end]],[knots_h[1],knots_h[end]],fill(humidity,2,2))))
   elseif humidity <: AbstractMatrix
     push!(expr, :(humidity = AtmInterpolate(knots_θ,knots_h,humidity;logh=true)))
   else
-    throw(ArgumentError("humidity must be a Real or AbstractMatrix but got $(typeof(humidity))."))
+    throw(ArgumentError("humidity must be a AbstractFloat or AbstractMatrix but got $(typeof(humidity))."))
   end
 
-  if co2ppm <: Real
+  if co2ppm <: AbstractFloat
     push!(expr, :(co2ppm = AtmInterpolate([knots_θ[1],knots_θ[end]],[knots_h[1],knots_h[end]],fill(co2ppm,2,2))))
   elseif co2ppm <: AbstractMatrix
     push!(expr, :(co2ppm = AtmInterpolate(knots_θ,knots_h,co2ppm;logh=false)))
   else
-    throw(ArgumentError("co2ppm must be a Real or AbstractMatrix but got $(typeof(co2ppm))."))
+    throw(ArgumentError("co2ppm must be a AbstractFloat or AbstractMatrix but got $(typeof(co2ppm))."))
   end
 
   push!(expr, :(wavelength = AtmInterpolate([knots_θ[1],knots_θ[end]],[knots_h[1],knots_h[end]],fill(wavelength,2,2))))
@@ -81,7 +81,7 @@ The levels are sorted in descending order, meaning the first element is the maxi
 This is the format required by the reay tracing algorithm.
 
 # Arguments
-- `T::Type{<:Real}`: The type of the levels, default is `Float64`.
+- `T::Type{<:AbstractFloat}`: The type of the levels, default is `Float64`.
 - `hmin::T`: The minimum value of the levels, default is `0.0`.
 - `hmax::T`: The maximum value of the levels, default is `120.0`.
 - `levels::Int`: The number of levels to create, must be a positive integer, default is `100`.
@@ -89,8 +89,8 @@ This is the format required by the reay tracing algorithm.
 # Returns
 - A vector of levels of type `T`, either logarithmically or linearly spaced between `hmin` and `hmax`.
 """
-function create_hlevelset(::Type{T}=Float64;hmin::Real=T(0.0),
-  hmax::Real=T(120.0),levels::Int=100,logscale=true) where {T<:Real}
+function create_hlevelset(::Type{T}=Float64;hmin::AbstractFloat=0.0,
+  hmax::AbstractFloat=120.0,levels::Int=100,logscale=true) where {T<:AbstractFloat}
   @assert(levels > 0 ,"levels must be a positive integer but got levels=$levels.")
   @assert(hmin >= 0   ,"hmin must be non-negative but got hmin=$hmin.")
   @assert(hmax>hmin  ,"hmax must be greater than hmin but got hmin=$hmin and hmax=$hmax.")
@@ -118,15 +118,15 @@ Create a set of radii for the raytracing method. The radii are evenly spaced in 
 ## Note
 The radii are sorted in ascending order, meaning the first element is the minimum radius and the last element is the maximum radius.
 # Arguments
-- `T::Type{<:Real}`: The type of the radii, default is `Float64`.
-- `θmin::Real`: The minimum angle in degrees, default is `0.0`.
-- `θmax::Real`: The maximum angle in degrees, default is `359.0`.
+- `T::Type{<:AbstractFloat}`: The type of the radii, default is `Float64`.
+- `θmin::AbstractFloat`: The minimum angle in degrees, default is `0.0`.
+- `θmax::AbstractFloat`: The maximum angle in degrees, default is `359.0`.
 - `radii::Int`: The number of radii to create, must be a positive integer, default is `360`.
 # Returns
 - A vector of radii of type `T`, evenly spaced between `θmin` and `θmax`.
 """
-function create_radii(::Type{T}=Float64;θmin::Real=T(0.0),
-  θmax::Real=T(359.0),radii::Int=360) where {T<:Real}
+function create_radii(::Type{T}=Float64;θmin::AbstractFloat=0.0,
+  θmax::AbstractFloat=359.0,radii::Int=360) where {T<:AbstractFloat}
   @assert(-360<=θmin<=360 ,"θmin must be in the range [-360, 360] but got θmin=$θmin.")
   @assert(-360<=θmax<=360 ,"θmax must be in the range [-360, 360] but got θmax=$θmax.")
   @assert(radii > 0 ,"radii must be a positive integer but got radii=$radii.")
@@ -144,8 +144,8 @@ end
 Create an atmosphere setting for ray tracing. This function generates an `AtmosphereSetting` object based on the provided parameters, which include angles, heights, temperature, pressure, humidity, CO2 concentration, and wavelength.
 
 # Key Arguments
-- `θᵢ::AbstractVector{T}`: A vector of angles in degrees, where `T` is a subtype of `Real`.
-- `hᵢ::AbstractVector{T}`: A vector of heights in kilometers, where `T` is a subtype of `Real`.
+- `θᵢ::AbstractVector{T}`: A vector of angles in degrees, where `T` is a subtype of `AbstractFloat`.
+- `hᵢ::AbstractVector{T}`: A vector of heights in kilometers, where `T` is a subtype of `AbstractFloat`.
 - `temperatureᵢ::AbstractMatrix{T}`: A matrix of temperature values, where each row corresponds to a level and each column corresponds to a radius.
 - `pressureᵢ::AbstractMatrix{T}`: A matrix of pressure values, where each row corresponds to a level and each column corresponds to a radius.
 - `humidity=0.0`: A scalar or matrix of humidity values, default is `0.0`. If a scalar is provided, it is broadcasted to match the size of the temperature matrix.
@@ -166,7 +166,7 @@ Create an atmosphere setting for ray tracing. This function generates an `Atmosp
   wavelength::T=10.0,
   knots_θ::AbstractVector{T}=create_hlevelset(),
   knots_h::AbstractVector{T}=create_radii(),
-) where {T<:Real}
+) where {T<:AbstractFloat}
 
   expr = Expr[]
   expr_loop = Expr[]
@@ -183,28 +183,28 @@ Create an atmosphere setting for ray tracing. This function generates an `Atmosp
   if humidity <: AbstractMatrix
     push!(expr,:(humidity = similar(temperatureᵢ,length(knots_θ), length(knots_h))))
     push!(expr_loop,:(humidity[i,j] = atm.humidity(knots_θ[i],knots_h[j]) ))
-  elseif humidity <: Real
+  elseif humidity <: AbstractFloat
     push!(expr,:(humidity = humidity))
   else
-    throw(ArgumentError("humidity must be a Real or AbstractMatrix but got $(typeof(humidity))."))
+    throw(ArgumentError("humidity must be a AbstractFloat or AbstractMatrix but got $(typeof(humidity))."))
   end
 
   if co2ppm <: AbstractMatrix
     push!(expr,:(co2ppm = similar(temperatureᵢ,length(knots_θ), length(knots_h))))
     push!(expr_loop,:(co2ppm[i,j] = atm.co2ppm(knots_θ[i],knots_h[j]) ))
-  elseif co2ppm <: Real
+  elseif co2ppm <: AbstractFloat
     push!(expr,:(co2ppm = co2ppm))
   else
-    throw(ArgumentError("co2ppm must be a Real or AbstractMatrix but got $(typeof(co2ppm))."))
+    throw(ArgumentError("co2ppm must be a AbstractFloat or AbstractMatrix but got $(typeof(co2ppm))."))
   end
 
   if wavelength <: AbstractMatrix
     push!(expr,:(wavelength = similar(temperatureᵢ,length(knots_θ), length(knots_h))))
     push!(expr_loop,:(wavelength[i,j] = atm.wavelength(knots_θ[i],knots_h[j]) ))
-  elseif wavelength <: Real
+  elseif wavelength <: AbstractFloat
     push!(expr,:(wavelength = wavelength))
   else
-    throw(ArgumentError("wavelength must be a Real or AbstractMatrix but got $(typeof(wavelength))."))
+    throw(ArgumentError("wavelength must be a AbstractFloat or AbstractMatrix but got $(typeof(wavelength))."))
   end
 
   return quote
@@ -219,7 +219,7 @@ Create an atmosphere setting for ray tracing. This function generates an `Atmosp
 end
 
 
-function grid_refractiveindex(model::AM,mean::MT,atm::AtmosphereSetting{N,M,T}) where {N,M,T<:Real,AM,MT}
+function grid_refractiveindex(model::AM,mean::MT,atm::AtmosphereSetting{N,M,T}) where {N,M,T<:AbstractFloat,AM,MT}
 
 
   n= similar(getfield(atm.temperature,:A),N,M-1)
@@ -269,4 +269,4 @@ function grid_refractiveindex(model::AM,mean::MT,atm::AtmosphereSetting{N,M,T}) 
 end
 
 
-grid_refractiveindex(atm::AtmosphereSetting{N,M,T};model::AM=Ciddor(),meantype::MT=GeometricMean()) where {N,M,T<:Real,AM,MT} = grid_refractiveindex(model,meantype, atm)
+grid_refractiveindex(atm::AtmosphereSetting{N,M,T};model::AM=Ciddor(),meantype::MT=GeometricMean()) where {N,M,T<:AbstractFloat,AM,MT} = grid_refractiveindex(model,meantype, atm)

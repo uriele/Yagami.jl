@@ -4,7 +4,6 @@ for datuminfo in DATUMINFO
   funcdatum = datuminfo
 
  @eval $funcdatum(::Type{<:T}=Float64) where T<:AbstractFloat = convert(T, $refdatum[])
- @eval $funcdatum(::Type{<:Real})  = convert(Float64, $refdatum[])
 end
 
 
@@ -101,20 +100,20 @@ end
 end
 
 
-@inline function rotation_matrix(angle::Real,nx::Real,ny::Real)
+@inline function rotation_matrix(angle::T,nx::T,ny::T) where T
   cosθ = cosd(angle)
   sinθ = sind(angle)
   return cosθ*nx+sinθ*ny, -sinθ*nx+cosθ*ny
 end
 
-@inline function nadir_angle_normal(nx::Real,ny::Real,angle::Real)
+@inline function nadir_angle_normal(nx::T,ny::T,angle::T) where T
   norm_ = hypot(nx, ny)
   nx,ny = nx/norm_, ny/norm_
 
   rotation_matrix(angle, nx, ny)
 end
 
-@inline function limb_angle_normal(nx::Real,ny::Real,angle::Real)
+@inline function limb_angle_normal(nx::T,ny::T,angle::T) where T
   nadir_angle_normal(ny, -nx, angle)
 end
 
@@ -128,3 +127,8 @@ function infologger(filename::String)
     println(io, args.message)
   end
 end
+
+@inline numshort(n::T;digits=3,padding=10) where T<:Real = lpad(@sprintf("%.*e",digits,n),padding+digits)
+@inline numshortf(n::T;digits=3,padding=10) where T<:Real = lpad(@sprintf("%.*f",digits,n),padding+digits)
+@inline numshort(n::Int;digits=3,padding=10) = lpad(@sprintf("%*i",digits,n),padding+digits)
+@inline textshort(n::String;digits=3,padding=10) = string(lpad(n,padding+digits))

@@ -24,9 +24,9 @@ A structure representing an atmospheric interpolation object for ray tracing.
 
 Create an atmospheric interpolation object for ray tracing. The interpolation is defined by the knots of height and angle, and the parameters matrix.
   # Arguments
-  - `knots_θ::AbstractVector{T}`: A vector of angles in degrees, where `T` is a subtype of `Real`.
-  - `knots_h::AbstractVector{T}`: A vector of heights in kilometers, where `T` is a subtype of `Real`.
-  - `parameters::AbstractMatrix{T}`: A matrix of parameters for the interpolation, where `T` is a subtype of `Real`.
+  - `knots_θ::AbstractVector{T}`: A vector of angles in degrees, where `T` is a subtype of `AbstractFloat`.
+  - `knots_h::AbstractVector{T}`: A vector of heights in kilometers, where `T` is a subtype of `AbstractFloat`.
+  - `parameters::AbstractMatrix{T}`: A matrix of parameters for the interpolation, where `T` is a subtype of `AbstractFloat`.
   - `logh::Bool`: If true, use logarithmic interpolation for height. Default is false.
   # Returns
   - An `AtmInterpolate` object with the specified knots and parameters.
@@ -128,7 +128,7 @@ end
 
 
 
-@inline __geth(h::T,knots_h::AbstractVector{T},__hmin::T,__hmax::T,M::Int) where {T<:Real} = if __hmin< h < __hmax
+@inline __geth(h::T,knots_h::AbstractVector{T},__hmin::T,__hmax::T,M::Int) where {T<:AbstractFloat} = if __hmin< h < __hmax
   searchsortedlast(knots_h, h,rev=true)
   elseif h == knots_h[1]
     1
@@ -138,7 +138,7 @@ end
     throw(BoundsError("h must be in the range [$__hmin, $__hmax]."))
   end
 
-@inline __getθ(θ::T,knots_θ::AbstractVector{T},__θmin::T,__θmax::T,N::Int) where {T<:Real} = begin
+@inline __getθ(θ::T,knots_θ::AbstractVector{T},__θmin::T,__θmax::T,N::Int) where {T<:AbstractFloat} = begin
   θ = mod(θ, 360);
   if __θmin <= θ < __θmax
     searchsortedlast(knots_θ, θ)
@@ -148,7 +148,7 @@ end
 end
 
 
-@inline (itp::AtmInterpolate{N,M,T,VN,VM,MP,ITP})(θ,h) where {N,M,T<:Real,VM<:AbstractVector{T},VN<:AbstractVector{T},MP<:AbstractMatrix{T},ITP<:BiLinear} = begin
+@inline (itp::AtmInterpolate{N,M,T,VN,VM,MP,ITP})(θ,h) where {N,M,T<:AbstractFloat,VM<:AbstractVector{T},VN<:AbstractVector{T},MP<:AbstractMatrix{T},ITP<:BiLinear} = begin
 
   __θmin = getfield(itp, :__θmin)
   __θmax = getfield(itp, :__θmax)
@@ -183,7 +183,7 @@ end
 end
 
 
-@inline (itp::AtmInterpolate{N,M,T,VM,VN,MP,ITP})(θ,h) where {N,M,T<:Real,VM<:AbstractVector{T},VN<:AbstractVector{T},MP<:AbstractMatrix{T},ITP<:LogLinear} = begin
+@inline (itp::AtmInterpolate{N,M,T,VM,VN,MP,ITP})(θ,h) where {N,M,T<:AbstractFloat,VM<:AbstractVector{T},VN<:AbstractVector{T},MP<:AbstractMatrix{T},ITP<:LogLinear} = begin
 
   __θmin = getfield(itp, :__θmin)
   __θmax = getfield(itp, :__θmax)

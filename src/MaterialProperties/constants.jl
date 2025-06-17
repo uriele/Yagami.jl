@@ -1,4 +1,4 @@
-using StaticArrays
+
 const CURRENTAirModel = ("Ciddor","Mathar")
 ############################################################################################
 # CONSTANTS FOR CONVERSION

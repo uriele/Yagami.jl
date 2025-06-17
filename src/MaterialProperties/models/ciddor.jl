@@ -17,26 +17,26 @@ ciddor_refractive_index(temperature, pressure, wavelength, humidity, CO2ppm)
   expr=Expr[]
   if wavelength<:AbstractArray
     push!(expr,:(wl=wavelength[i]))
-  elseif wavelength<:Real
+  elseif wavelength<:AbstractFloat
     push!(expr,:(wl=wavelength))
   else
-    error("ciddor_refractive_index!: wavelength must be a Real or AbstractArray")
+    error("ciddor_refractive_index!: wavelength must be a AbstractFloat or AbstractArray")
   end
 
   if humidity<:AbstractArray
     push!(expr,:(hu=humidity[i]))
-  elseif humidity<:Real
+  elseif humidity<:AbstractFloat
     push!(expr,:(hu=humidity))
   else
-    error("ciddor_refractive_index!: humidity must be a Real or AbstractArray")
+    error("ciddor_refractive_index!: humidity must be a AbstractFloat or AbstractArray")
   end
 
   if CO2ppm<:AbstractArray
     push!(expr,:(co2=CO2ppm[i]))
-  elseif CO2ppm<:Real
+  elseif CO2ppm<:AbstractFloat
     push!(expr,:(co2=CO2ppm))
   else
-    error("ciddor_refractive_index!: CO2ppm must be a Real or AbstractArray")
+    error("ciddor_refractive_index!: CO2ppm must be a AbstractFloat or AbstractArray")
   end
 
   return quote
@@ -51,7 +51,7 @@ ciddor_refractive_index(temperature::T, pressure::T, wavelength::W=10.0, humidit
 
 
 
-@inline function __compressibility_ciddor(temperature_celsius::Real, temperature_kelvin::Real, pressure::Real, xw::Real)
+@inline function __compressibility_ciddor(temperature_celsius::AbstractFloat, temperature_kelvin::AbstractFloat, pressure::AbstractFloat, xw::AbstractFloat)
   fraction = pressure/temperature_kelvin
   fraction² = fraction*fraction
   xw² = xw*xw
@@ -68,7 +68,7 @@ ciddor_refractive_index(temperature::T, pressure::T, wavelength::W=10.0, humidit
   )
 end
 
-@inline function __density_ciddor(temperature_kelvin::T,pressure::T,molar_mass::T,compressibility::T)::T where T<:Real
+@inline function __density_ciddor(temperature_kelvin::T,pressure::T,molar_mass::T,compressibility::T)::T where T<:AbstractFloat
   pressure* molar_mass/(RGAS*temperature_kelvin*compressibility)
 end
 

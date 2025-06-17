@@ -102,17 +102,17 @@ for mathar in MATHARRANGES
     expr = Expr[]
     if wavelength <: AbstractArray
       push!(expr, :(wl=wavelength[i]))
-    elseif wavelength <: Real
+    elseif wavelength <: AbstractFloat
       push!(expr, :(wl=wavelength))
     else
-      error("mathar_refractive_index!: wavelength must be a Real or AbstractArray")
+      error("mathar_refractive_index!: wavelength must be a AbstractFloat or AbstractArray")
     end
     if humidity <: AbstractArray
       push!(expr, :(hu=humidity[i]))
-    elseif humidity <: Real
+    elseif humidity <: AbstractFloat
       push!(expr, :(hu=humidity))
     else
-      error("mathar_refractive_index!: humidity must be a Real or AbstractArray")
+      error("mathar_refractive_index!: humidity must be a AbstractFloat or AbstractArray")
     end
 
     quote

@@ -1,11 +1,13 @@
 module RayTracing
-using LinearAlgebra, StaticArrays
+using LinearAlgebra
+
+using StaticArrays:SVector
 using Logging,LoggingExtras
 using DocStringExtensions
 using StructArrays
 using Lazy: @forward  # to forward methods of DistanceFunc to Zbrent
 using Moshi.Match: @match
-
+using Polyester: @batch
 using Reexport
 include("../YagamiCore/YagamiCore.jl")
 include("../MaterialProperties/MaterialProperties.jl")
@@ -33,6 +35,7 @@ include("utilities.jl")
 include("tracing/datastructures.jl")
 include("tracing/distancefunc.jl")
 include("files/cairt.jl")
+include("files/loggersimulation.jl")
 include("tracing/snellslaw.jl")
 include("tracing/minimizationintersection.jl")
 
@@ -46,13 +49,8 @@ ray2_altitude(::EA,W::T,Z::T,a::T,b::T) where {T<:AbstractFloat,EA<:EarthApproxi
 ray2_altitudeangle(::EA,W::T,Z::T,a::T,b::T) where {T<:AbstractFloat,EA<:EarthApproximation} = throw(ArgumentError("Unknown Earth Approximation: $EA. Use Fukushima or Bowring."))
 
 
-export Ray2D,ResultRay
+export  getpoint, getdirection
 
-export getwedgeindex, getpoint, getdirection,getaltitude,getazimuth,getlength
-
-for toexp in TOEXP
-  @eval export $toexp
-end
 
 export snellslaw!
 export gettemperature, getpressure, gethumidity, getco2ppm
@@ -78,5 +76,10 @@ for func in EXPCAIRTHELPERS
 end
 export create_hlevelset, create_radii,create_atmosphere,grid_refractiveindex
 
+
+# Main functions for ray tracing
+export raytracing!, raytracing_parallel!
+
+export SimpleResult,AbstractResult
 
 end

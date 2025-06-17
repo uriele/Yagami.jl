@@ -1,15 +1,15 @@
-using LinearAlgebra,StaticArrays,StructArrays,FastGaussQuadrature
-
+using LinearAlgebra,StructArrays,FastGaussQuadrature
+using StaticArrays: SVector
 
 """
      $SIGNATURES
 
 A structure to hold quadrature points and weights for numerical integration. Where `N` is the number of quadrature points and `T` is the type of the points and weights.
 """
-struct QuadraturePoints{N,T<:Real}
+struct QuadraturePoints{N,T<:AbstractFloat}
     points::SVector{N,T}
     weights::SVector{N,T}
-    function QuadraturePoints(points::A,weights::A) where {T<:Real,A<:AbstractVector{T}}
+    function QuadraturePoints(points::A,weights::A) where {T<:AbstractFloat,A<:AbstractVector{T}}
       Np= length(points)
       Nw= length(weights)
       if Np != Nw
@@ -33,7 +33,7 @@ Get quadrature points and weights for numerical integration using Gauss-Legendre
   # Returns
   A `QuadraturePoints` object with the quadrature points and weights.
 """
-function get_quadrature_points(::Type{T},n::Int) where {T<:Real}
+function get_quadrature_points(::Type{T},n::Int) where {T<:AbstractFloat}
     if n <= 0
         throw(ArgumentError("Number of quadrature points must be positive."))
     end
@@ -53,7 +53,7 @@ The function evaluates `f` at the quadrature points scaled by `t`, computes the 
 
 The function f needs to have the following signature:
 ```julia
-f(points::AbstractVector{T}, p) where {T<:Real}
+f(points::AbstractVector{T}, p) where {T<:AbstractFloat}
 ```
 where p is an optional parameter that can be passed to the function to account for additional parameters in the integral.
 
@@ -66,8 +66,8 @@ where p is an optional parameter that can be passed to the function to account f
   # Returns
   The computed linear integral as a scalar value.
 """
-function linintegral(f::F,Q::QuadraturePoints{N,T},t::T=T(1.0),p=nothing) where {F,T<:Real,N}
-    t_half=t*T(0.5)
+function linintegral(f::F,Q::QuadraturePoints{N,T},t::T=T(1.0),p=nothing) where {F,T<:AbstractFloat,N}
+    t_half=t*convert(T,0.5)
     dot(Q.weights, f((@. Q.points*t_half+t_half),p)) * t_half
 end
 
@@ -80,7 +80,7 @@ The function uses the quadrature points and weights to evaluate the integral num
 The function evaluates `f` at the quadrature points scaled by `t`, computes the dot product with the weights, and stores the result in the output array `out`.
 The function f needs to have the following signature:
 ```julia
-f(points::AbstractVector{T}, p) where {T<:Real}
+f(points::AbstractVector{T}, p) where {T<:AbstractFloat}
 ```
 where p is an optional parameter that can be passed to the function to account for additional parameters in the integral.
 
@@ -94,17 +94,17 @@ where p is an optional parameter that can be passed to the function to account f
   # Returns
   The output array with the computed linear integrals.
 """
-function linintegral!(out::AbstractArray{T},f::F,Q::QuadraturePoints{N,T},t::AbstractArray{T},p::AbstractArray) where {T<:Real,N,F}
+function linintegral!(out::AbstractArray{T},f::F,Q::QuadraturePoints{N,T},t::AbstractArray{T},p::AbstractArray) where {T<:AbstractFloat,N,F}
     @simd  for i in eachindex(out)
-        @inbounds t_half=t[i]*T(0.5)
+        @inbounds t_half=t[i]*convert(T,0.5)
         @inbounds out[i]=dot(Q.weights, f((@.Q.points*t_half+t_half),p[i])) * t_half
     end
     return out
 end
 
-function linintegral!(out::AbstractArray{T},f::F,Q::QuadraturePoints{N,T},t::AbstractArray{T},p::S) where {T<:Real,N,S,F}
+function linintegral!(out::AbstractArray{T},f::F,Q::QuadraturePoints{N,T},t::AbstractArray{T},p::S) where {T<:AbstractFloat,N,S,F}
     @simd  for i in eachindex(out)
-        @inbounds t_half=t[i]*T(0.5)
+        @inbounds t_half=t[i]*convert(T,0.5)
         @inbounds out[i]=dot(Q.weights, f((@.Q.points*t_half+t_half),p)) * t_half
     end
     return out

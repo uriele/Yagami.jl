@@ -1,52 +1,48 @@
-using Yagami.RayTracing
-using Yagami.RayTracing:__setpointx!, __setpointy!, __setdirectionx!, __setdirectiony!, __seti!, __setj!,__setaltitude!,__setazimuth!,__setlength!
-using Yagami.RayTracing: __getpointx, __getpointy,__getdirectionx, __getdirectiony
-using Yagami:MAJORAXIS
-using StructArrays
+using Yagami
+using StructArrays: StructArray
 using Test
-@testset "Tracing Data Structures" begin
-  pointsx= fill(MAJORAXIS(),100)
-  pointsy= fill(MAJORAXIS()/cosd(10),100)
-  directinsx =zeros(100)
-  directinsy = ones(100)
+testfile="$(pwd())/RayTracing/_data/cairt.nc"
+prob1=RayTracingProblem(testfile;)
+res_serial=StructArray(fill(SimpleResult(),200,50));
+res_parallel=StructArray(fill(SimpleResult(),200,50));
 
-  s = StructArray{Ray2D{Float64}}(undef,100)
-  for i in eachindex(s)
-    s.pointx[i] = pointsx[i]
-    s.pointy[i] = pointsy[i]
-    s.directionx[i] = directinsx[i]
-    s.directiony[i] = directinsy[i]
-    s.i[i] = 1
-    s.j[i] = 2
+_pointx=prob1.pointsx[2]
+_pointy=prob1.pointsy[2]
+_directionx=prob1.directionsx[2]
+_directiony=prob1.directionsy[2]
+
+
+raytracing!(res_serial,prob1)
+raytracing_parallel!(res_parallel,prob1)
+
+tangent_h_base= prob1.tangent_h
+tangent_θ_base= mod.(prob1.tangent_θ,360)
+
+
+tangent_h_serial= similar(tangent_h_base)
+tangent_θ_serial= similar(tangent_θ_base)
+tangent_h_parallel= similar(tangent_h_base)
+tangent_θ_parallel= similar(tangent_θ_base)
+@testset "Serial vs Parallel Ray Tracing" begin
+  for field in propertynames(res_serial)
+    @eval @test res_serial.$field == res_parallel.$field
   end
-
-  rex=ResultRay{Float64}(10)
-  s1=StructArray(fill(rex,100))
-  for i in 1:10
-    __setpointx!(s1[1],i,round(i))
-    __setpointy!(s1[1],i,round(i+1))
-    __setdirectionx!(s1[1],i,round(i+2))
-    __setdirectiony!(s1[1],i,round(i+3))
-    __setindex_i!(s1[1],i,i)
-    __setindex_j!(s1[1],i,i)
-    __setaltitude!(s1[1],i,round(i+6))
-    __setazimuth!(s1[1],i,round(i+7))
-    __setlength!(s1[1],i,round(i+8))
+  @inbounds for j in axes(res_serial,2)
+    idx_cut_serial                                  = findfirst(res_serial.length_t[:,j] .== 0)
+    idx_cut_parallel                                = findfirst(res_parallel.length_t[:,j] .== 0)
+    @test idx_cut_serial == idx_cut_parallel
+    tangent_h_serial[j],idx_min_serial              = findmin(res_serial[1:idx_cut_serial-1,j].altitude)
+    tangent_θ_serial[j]                             = res_serial[idx_min_serial,j].azimuth
+    tangent_h_parallel[j],idx_min_parallel  = findmin(res_parallel[1:idx_cut_parallel-1,j].altitude)
+    tangent_θ_parallel[j]                           = res_parallel[idx_min_parallel,j].azimuth
+    @test idx_min_serial == idx_min_parallel
+    @test tangent_h_serial[j] ≈ tangent_h_parallel[j]
+    @test tangent_θ_serial[j] ≈ tangent_θ_parallel[j]
   end
-
-  # test helper functions
-  @test getpoint(s[1],:x) == getpoint(s[1],1) == s.pointx[1]
-  @test getpoint(s[1],:y) == getpoint(s[1],2) == s.pointy[1]
-  @test getdirection(s[1],:x) == getdirection(s[1],1) == s.directionx[1]
-  @test getdirection(s[1],:y) == getdirection(s[1],2) == s.directiony[1]
-
-  @test getindex_i(s1[1]) == s1[1].index_i[1] == getindex_j(s1[1],1)
-  @test s1[1].index_j[4] == getindex_j(s1[1],4)
-  @test s1[1].length[1] == getlength(s1[1],1)
-  @test s1[1].altitude[1] == getaltitude(s1[1],1)
-  @info s1[1].azimuth[1] == getazimuth(s1[1],1)
-  @test getpointx(s1[1])== s1[1].pointx[1]
-  @test getpointy(s1[1]) == s1[1].pointy[1]
-  @test getdirectionx(s1[1],2) ==  s1[1].directionx[2]
-  @test getdirectiony(s1[1],3) ==  s1[1].directiony[3]
+  # difference less than 0.5km
+  @test maximum(abs.(tangent_h_serial-tangent_h_base))<0.5
+  @test tangent_h_serial== tangent_h_parallel
+  # difference less than 1 degree
+  @test all(extrema(abs.(tangent_θ_serial-tangent_θ_base)).<1)
+  @test tangent_θ_serial== tangent_θ_parallel
 end

@@ -1155,6 +1155,11 @@ deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 version = "1.11.0"
 
+[[deps.UnPack]]
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
+uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+version = "1.0.2"
+
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 version = "1.11.0"
@@ -1206,7 +1211,7 @@ uuid = "ffd25f8a-64ca-5728-b0f7-c24cf3aae800"
 version = "5.8.1+0"
 
 [[deps.Yagami]]
-deps = ["CoordRefSystems", "DocStringExtensions", "FastGaussQuadrature", "Geodesy", "HITRAN", "Lazy", "LinearAlgebra", "Logging", "LoggingExtras", "Moshi", "NCDatasets", "NaturalNeighbours", "PyCall", "Reexport", "StaticArrays", "StructArrays", "Unitful"]
+deps = ["CoordRefSystems", "DocStringExtensions", "FastGaussQuadrature", "Geodesy", "HITRAN", "Lazy", "LinearAlgebra", "Logging", "LoggingExtras", "Moshi", "NCDatasets", "NaturalNeighbours", "Polyester", "Printf", "PyCall", "Reexport", "StaticArrays", "StructArrays", "UnPack", "Unitful"]
 path = ".."
 uuid = "6c1512a5-7034-4c39-b54a-f9774b92869c"
 version = "0.1.0-DEV"
