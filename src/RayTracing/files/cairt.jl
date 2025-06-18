@@ -34,7 +34,24 @@ function atmosphere_info(atmosphere)
 end
 
 
+"""
+   `RayTracingProblem(filename; meantype=GeometricMean(), model=Ciddor(),
+    earthmodel=Fukushima(),logger=nothing)`
 
+Create a `RayTracingProblem` from a Cairt file.
+This struct represents a ray tracing problem with all the necessary data
+to perform ray tracing calculations, including the atmosphere, refractive index, and satellite scan information.
+# Arguments:
+- `filename::String`: The path to the Cairt file containing the ray tracing data.
+
+# Key Arguments:
+- `meantype::MT=GeometricMean()`: The mean type to be used for the refractive index calculation (default is `GeometricMean`).
+- `model::AM=Ciddor()`: The air model to be used for the refractive index calculation (default is `Ciddor`).
+- `earthmodel::EA=Fukushima()`: The earth approximation model to be used (default is `Fukushima`).
+- `logger=nothing`: An optional logger to log information during the problem creation (default is `NullLogger`).
+# Returns:
+- `RayTracingProblem`: An instance of `RayTracingProblem` containing the data read from the Cairt file and the calculated refractive index and atmosphere.
+"""
 struct RayTracingProblem{T<:AbstractFloat,MT<:MeanType,AM<:AirModel,
   EA<:EarthApproximation,ATM<:AtmosphereSetting,
   V<:AbstractVector{T},
@@ -63,8 +80,9 @@ struct RayTracingProblem{T<:AbstractFloat,MT<:MeanType,AM<:AirModel,
     meantype::MT=GeometricMean(), model::AM=Ciddor(),
     earthmodel::EA=Fukushima(),
     logger=nothing,
-    ) where {MT<:MeanType,AM<:AirModel,
-    EA<:EarthApproximation}
+  )   where {MT<:MeanType,AM<:AirModel,
+    EA<:EarthApproximation
+  }
     nc=NCDataset(filename)
 
     logger = @match logger begin
@@ -204,8 +222,15 @@ struct RayTracingProblem{T<:AbstractFloat,MT<:MeanType,AM<:AirModel,
       nscans,nlos,logger )
   end
 end
-Base.show(io::IO,::Type{<:RayTracingProblem{T}}) where T = print(io, "RayTracingProblem{$T}")
-Base.show(io::IO, probl::RayTracingProblem{T}) where T = begin
+Base.show(io::IO,::Type{<:RTP}) where {T<:AbstractFloat,MT<:MeanType,AM<:AirModel,
+  EA<:EarthApproximation,ATM<:AtmosphereSetting,
+  V<:AbstractVector{T},
+  M<:AbstractMatrix{T},L<:AbstractLogger,RTP<:RayTracingProblem{T,MT,AM,EA,ATM,V,M,L}} = print(io, "RayTracingProblem{$T}")
+Base.show(::IO, probl::RayTracingProblem{T,MT,AM,EA,ATM,V,M,L}
+) where {T<:AbstractFloat,MT<:MeanType,AM<:AirModel,
+  EA<:EarthApproximation,ATM<:AtmosphereSetting,
+  V<:AbstractVector{T},
+  M<:AbstractMatrix{T},L<:AbstractLogger} = begin
   println("RayTracingProblem{$T}:")
   println("   Filename: $(probl.filename)")
   println("   MeanType: $(typeof(probl.meantype))")
@@ -378,8 +403,11 @@ julia> extrapolatetemperature(prob) # defaults to theta=0.0, h=0.0
 278.15
 ```
 """
-extrapolatetemperature(prob::RayTracingProblem{T},θ::T,h::T) where {T<:AbstractFloat}=prob.temperature(float(θ),float(h))
-extrapolatetemperature(prob::RayTracingProblem{T};theta::T=0.0,h::T=0.0) where {T<:AbstractFloat}=extrapolatetemperature(prob,theta,h)
+extrapolatetemperature(prob::RTP,θ::T,h::T) where {T<:AbstractFloat,RTP<:RayTracingProblem{T}}=prob.temperature(float(θ),float(h))
+function extrapolatetemperature(prob::RTP;theta::Real=0.0,h::Real=0.0) where {RTP<:RayTracingProblem}
+  T=eltype(theta)
+  extrapolatetemperature(T(prob),T(theta),T(h))
+end
 """
    `extrapolatepressure(prob::RayTracingProblem, θ::AbstractFloat, h::AbstractFloat)`
     `extrapolatepressure(prob::RayTracingProblem; theta=0.0, h=0.0)`
@@ -407,8 +435,11 @@ julia> extrapolatepressure(prob) # defaults to theta=0.0, h=0.0
 ```
 
 """
-extrapolatepressure(prob::RayTracingProblem{T},θ::T,h::T) where {T<:AbstractFloat} =prob.pressure(float(θ),float(h))
-extrapolatepressure(prob::RayTracingProblem{T};theta::T=zero(T),h::T=zero(T)) where {T<:AbstractFloat} =extrapolatepressure(prob,theta,h)
+extrapolatepressure(prob::RTP,θ::T,h::T) where {T<:AbstractFloat,RTP<:RayTracingProblem{T}} =prob.pressure(float(θ),float(h))
+function extrapolatepressure(prob::RTP;theta::Real=0.0,h::Real=0.0) where {RTP<:RayTracingProblem}
+  T=eltype(theta)
+  extrapolatepressure(T(prob),T(theta),T(h))
+end
 
 """
     `extrapolatehumidity(prob::RayTracingProblem, θ::AbstractFloat, h::AbstractFloat)`
@@ -421,8 +452,11 @@ Extrapolates the humidity at a given line of angle `θ` and height `h` for a giv
 # Returns:
 - `Float64`: The extrapolated humidity in %
 """
-extrapolatehumidity(prob::RayTracingProblem{T},θ::T,h::T) where {T<:AbstractFloat} =prob.humidity(float(θ),float(h))*100
-extrapolatehumidity(prob::RayTracingProblem{T};theta::T=0.0,h::T=0.0) where {T<:AbstractFloat}=extrapolatehumidity(prob,theta,h)
+extrapolatehumidity(prob::RTP,θ::T,h::T) where {T<:AbstractFloat,RTP<:RayTracingProblem{T}} =prob.humidity(float(θ),float(h))*100
+function extrapolatehumidity(prob::RTP;theta::Real=0.0,h::Real=0.0) where {RTP<:RayTracingProblem}
+  T=eltype(theta)
+  extrapolatehumidity(T(prob),T(theta),T(h))
+end
 
 
 """
@@ -450,8 +484,11 @@ julia> extrapolateco2ppm(prob) # defaults to theta=0.0, h=0.0
 400.0
 ```
 """
-extrapolateco2ppm(prob::RayTracingProblem{T},θ::T,h::T) where {T<:AbstractFloat} =prob.co2ppm(float(θ),float(h))
-extrapolateco2ppm(prob::RayTracingProblem{T};theta::T=0.0,h::T=0.0) where {T<:AbstractFloat}=extrapolateco2ppm(prob,theta,h)
+extrapolateco2ppm(prob::RTP,θ::T,h::T) where {T<:AbstractFloat,RTP<:RayTracingProblem{T}} =prob.co2ppm(float(θ),float(h))
+function extrapolateco2ppm(prob::RTP;theta::Real=0.0,h::Real=0.0) where {RTP<:RayTracingProblem}
+  T=eltype(theta)
+  extrapolateco2ppm(T(prob),T(theta),T(h))
+end
 """
     `extrapolatewavelength(prob::RayTracingProblem, θ::AbstractFloat, h::AbstractFloat)`
     `extrapolatewavelength(prob::RayTracingProblem; theta=0.0, h=0.0)`
@@ -477,8 +514,8 @@ julia> extrapolatewavelength(prob) # defaults to theta=0.0, h=0.0
 1.0
 ```
 """
-extrapolatewavelength(prob::RayTracingProblem{T},θ::T,h::T) where {T<:AbstractFloat} =prob.wavelength(float(θ),float(h))
-extrapolatewavelength(prob::RayTracingProblem{T};theta::T=0.0,h::T=0.0) where {T<:AbstractFloat}=extrapolatewavelength(prob,theta,h)
+extrapolatewavelength(prob::RTP,θ::T,h::T) where {T<:AbstractFloat,RTP<:RayTracingProblem{T}} =prob.wavelength(float(θ),float(h))
+extrapolatewavelength(prob::RTP;theta::Real=0.0,h::Real=0.0) where {T<:AbstractFloat,RTP<:RayTracingProblem{T}}=extrapolatewavelength(T(prob),T(theta),T(h))
 
 """
   `getsatposition(prob::RayTracingProblem, los::Int, scan::Int)`

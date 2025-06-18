@@ -5,6 +5,7 @@ version = "0.1.0-DEV"
 
 [deps]
 CoordRefSystems = "b46f11dc-f210-4604-bfba-323c1ec968cb"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
 Geodesy = "0ef565a4-170c-5f04-8de2-149903a85f3d"
@@ -33,6 +34,7 @@ MakieExt = ["Makie"]
 
 [compat]
 CoordRefSystems = "0.17.7"
+DataFrames = "1.7.0"
 DocStringExtensions = "0.9.5"
 FastGaussQuadrature = "1.0.2"
 Geodesy = "1.1.0"

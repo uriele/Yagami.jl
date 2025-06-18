@@ -30,4 +30,6 @@ using .RayTracing
 @reexport using .RayTracing: EarthApproximation, Fukushima, Bowring
 
 @reexport using .CurtisGodson: QuadraturePoints, get_quadrature_points, linintegral
+
+@reexport using .RayTracing: azimuthlocal, altitudelocal, pointxlocal, pointylocal, lengthlocal
 end

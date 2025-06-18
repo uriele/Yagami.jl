@@ -82,4 +82,6 @@ export raytracing!, raytracing_parallel!
 
 export SimpleResult,AbstractResult
 
+export azimuthlocal, altitudelocal, pointxlocal, pointylocal, lengthlocal
+
 end

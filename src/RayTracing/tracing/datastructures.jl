@@ -44,3 +44,26 @@ data structure used to store the results of ray tracing calculations and it is a
 SimpleResult(pointx::T=MAJORAXIS(), pointy::T=MINORAXIS(), directionx::T=0.0, directiony::T=-1.0,
   altitude::T=zero(T), azimuth::T=zero(T), length::T=zero(T), i::Int=0, j::Int=0,descending::Bool=true) where {T<:AbstractFloat} =
   SimpleResult{T}(pointx, pointy, directionx, directiony, altitude, azimuth, length, i, j,descending,true)
+
+
+  azimuthlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+    idx= findfirst(results.length_t[:,i] .== 0)
+    results.azimuth[1:idx-1,i]
+  end
+  altitudelocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+    idx= findfirst(results.length_t[:,i] .== 0)
+    results.altitude[1:idx-1,i]
+  end
+  pointxlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+    idx= findfirst(results.length_t[:,i] .== 0)
+    results.pointx[1:idx-1,i]
+  end
+  pointylocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+    idx= findfirst(results.length_t[:,i] .== 0)
+    results.pointy[1:idx-1,i]
+  end
+
+  lengthlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+    idx= findfirst(results.length_t[:,i] .== 0)
+    results.length_t[1:idx-1,i]
+  end
