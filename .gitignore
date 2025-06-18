@@ -2,6 +2,7 @@
 *.jl.cov
 *.jl.mem
 *.csv
+*.log
 __*.jl
 /_*/
 /Manifest*.toml

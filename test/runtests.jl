@@ -17,7 +17,7 @@ end
         Aqua.test_all(Yagami; stale_deps=false)
     end
     @testset "Code linting (JET.jl)" begin
-      #  JET.test_package(Yagami; target_defined_modules = true)
+        JET.test_package(Yagami; target_defined_modules = true)
     end
     # Write your tests here.
 end
