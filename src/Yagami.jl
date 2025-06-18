@@ -25,7 +25,7 @@ using .RayTracing
 
 @reexport using .RayTracing: create_atmosphere, create_hlevelset,create_radii
 @reexport using .RayTracing: SimpleResult,AbstractResult, RayTracingProblem
-@reexport using .RayTracing: raytracing!, raytracing_parallel!
+@reexport using .RayTracing: raytracing!, raytracing_parallel!,DistanceFunc
 
 @reexport using .RayTracing: EarthApproximation, Fukushima, Bowring
 
