@@ -14,6 +14,9 @@ include("../MaterialProperties/MaterialProperties.jl")
 using .YagamiCore
 using .YagamiCore: infologger
 using .MaterialProperties
+using Unitful: ustrip,uconvert,Pa,hPa,km
+using ..YagamiCore: numshort,textshort,numshortf
+
 @reexport using ..MaterialProperties: Mathar160_240, Mathar075_141, Mathar043_052, Mathar028_042, Mathar013_025
 @reexport using ..MaterialProperties: Ciddor, Mathar, Carlotti, AirModel
 @reexport using ..MaterialProperties: refractive_index, refractive_index!
@@ -34,8 +37,15 @@ include("grid/atmospheresetting.jl")
 include("utilities.jl")
 include("tracing/datastructures.jl")
 include("tracing/distancefunc.jl")
-include("files/cairt.jl")
 include("files/loggersimulation.jl")
+include("files/raytracingproblem.jl")
+######################################
+# IMPORTANT: The order of the includes matters!
+# Also, inside raytracingproblem.jl, there is a constant called
+# `EXISTINGMODELS` which is used to include the necessary files and
+# dispatch different ray tracing format readers. USE THAT CONSTANT!!!
+######################################
+
 include("tracing/snellslaw.jl")
 include("tracing/minimizationintersection.jl")
 
@@ -44,6 +54,7 @@ export RayTracingProblem,AtmosphereSetting
 export EarthApproximation, Fukushima, Bowring
 export earthmodelfunction
 export DistanceFunc
+
 ray2_angle(::EA,W::T,Z::T,a::T,b::T) where {T<:AbstractFloat,EA<:EarthApproximation} = throw(ArgumentError("Unknown Earth Approximation: $EA. Use Fukushima or Bowring."))
 ray2_altitude(::EA,W::T,Z::T,a::T,b::T) where {T<:AbstractFloat,EA<:EarthApproximation} = throw(ArgumentError("Unknown Earth Approximation: $EA. Use Fukushima or Bowring."))
 ray2_altitudeangle(::EA,W::T,Z::T,a::T,b::T) where {T<:AbstractFloat,EA<:EarthApproximation} = throw(ArgumentError("Unknown Earth Approximation: $EA. Use Fukushima or Bowring."))

@@ -20,4 +20,5 @@ module YagamiCore
   # find angle from nadir and limb convention
   export nadir_angle_normal, limb_angle_normal
   export infologger
+  export file_to_array
 end

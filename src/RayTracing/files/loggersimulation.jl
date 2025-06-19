@@ -1,4 +1,7 @@
 using UnPack:@unpack
+
+
+
 @inline function write_tracing_log(logger::L, results::RR,refractive::M) where {L<:AbstractLogger,
   T<:AbstractFloat,RR<:AbstractMatrix{<:AbstractResult{T}}, M<:AbstractMatrix{T}
 }
@@ -69,3 +72,39 @@ using UnPack:@unpack
   end
 end
 write_tracing_log(::NullLogger, ::RR,::M) where {T<:AbstractFloat,RR<:AbstractMatrix{<:AbstractResult{T}},M<:AbstractMatrix{T}} = nothing
+
+
+
+
+
+function atmosphere_info(atmosphere)
+      @info "===================================================================="
+      @info "Temperature information:"
+      @info "===================================================================="
+      @info "$(textshort("θ [°]")) $(textshort("h [km]")) $(textshort("T [K]"))  $(textshort("P [Pa]")) $(textshort("humidity [%]")) $(textshort("CO2 [ppm]")) $(textshort("λ [μm]"))"
+      for j in eachindex(atmosphere.temperature.knots_h)
+        h= atmosphere.temperature.knots_h[j]
+        for i in eachindex(atmosphere.temperature.knots_θ[1:end-1])
+          θ= atmosphere.temperature.knots_θ[i]
+          T= atmosphere.temperature(θ,h)
+          P= atmosphere.pressure(θ,h)
+          H= atmosphere.humidity(θ,h)*100
+          CO2= atmosphere.co2ppm(θ,h)
+          λ= atmosphere.wavelength(θ,h)
+          @info "$(numshort(θ)) $(numshort(h)) $(numshort(T)) $(numshort(P)) $(numshort(H)) $(numshort(CO2)) $(numshort(λ))"
+        end
+      end
+end
+
+function refractive_info(refractive)
+  @info "===================================================================="
+  @info "Refractive index information:"
+  @info "===================================================================="
+  @info "$(textshort("θ_i")) $(textshort("h_j")) $(textshort("(n-1) [1e-4]"))"
+  for j in axes(refractive,2)
+    for i in axes(refractive,1)
+      n= refractive[i,j]
+      @info "$(numshort(i)) $(numshort(j)) $(numshort((n-1)*1e4))"
+    end
+  end
+end

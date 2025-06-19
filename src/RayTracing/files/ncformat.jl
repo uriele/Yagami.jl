@@ -1,47 +1,15 @@
-using Unitful: ustrip,uconvert,Pa,hPa,km
 using NCDatasets: NCDataset
-using ..YagamiCore: numshort,textshort,numshortf
 
-function refractive_info(refractive)
-  @info "===================================================================="
-  @info "Refractive index information:"
-  @info "===================================================================="
-  @info "$(textshort("θ_i")) $(textshort("h_j")) $(textshort("(n-1) [1e-4]"))"
-  for j in axes(refractive,2)
-    for i in axes(refractive,1)
-      n= refractive[i,j]
-      @info "$(numshort(i)) $(numshort(j)) $(numshort((n-1)*1e4))"
-    end
-  end
-end
-function atmosphere_info(atmosphere)
-      @info "===================================================================="
-      @info "Temperature information:"
-      @info "===================================================================="
-      @info "$(textshort("θ [°]")) $(textshort("h [km]")) $(textshort("T [K]"))  $(textshort("P [Pa]")) $(textshort("humidity [%]")) $(textshort("CO2 [ppm]")) $(textshort("λ [μm]"))"
-      for j in eachindex(atmosphere.temperature.knots_h)
-        h= atmosphere.temperature.knots_h[j]
-        for i in eachindex(atmosphere.temperature.knots_θ[1:end-1])
-          θ= atmosphere.temperature.knots_θ[i]
-          T= atmosphere.temperature(θ,h)
-          P= atmosphere.pressure(θ,h)
-          H= atmosphere.humidity(θ,h)*100
-          CO2= atmosphere.co2ppm(θ,h)
-          λ= atmosphere.wavelength(θ,h)
-          @info "$(numshort(θ)) $(numshort(h)) $(numshort(T)) $(numshort(P)) $(numshort(H)) $(numshort(CO2)) $(numshort(λ))"
-        end
-      end
-end
 
 
 """
-   `RayTracingProblem(filename; meantype=GeometricMean(), model=Ciddor(),
-    earthmodel=Fukushima(),logger=nothing)`
+   $SIGNATURES
 
 Create a `RayTracingProblem` from a Cairt file.
 This struct represents a ray tracing problem with all the necessary data
 to perform ray tracing calculations, including the atmosphere, refractive index, and satellite scan information.
 # Arguments:
+- `::Cairt`: A type representing the Cairt file format, which is used to read the ray tracing data.
 - `filename::String`: The path to the Cairt file containing the ray tracing data.
 
 # Key Arguments:
@@ -52,31 +20,7 @@ to perform ray tracing calculations, including the atmosphere, refractive index,
 # Returns:
 - `RayTracingProblem`: An instance of `RayTracingProblem` containing the data read from the Cairt file and the calculated refractive index and atmosphere.
 """
-struct RayTracingProblem{T<:AbstractFloat,MT<:MeanType,AM<:AirModel,
-  EA<:EarthApproximation,ATM<:AtmosphereSetting,
-  V<:AbstractVector{T},
-  M<:AbstractMatrix{T},L<:AbstractLogger
-}
-  filename::String
-  meantype::MT
-  model::AM
-  earthmodel::EA
-  ###### Data
-  atmosphere::ATM
-  refractive::M
-  pointsx::V
-  pointsy::V
-  directionsx::V
-  directionsy::V
-  ##############
-  tangent_h:: V
-  tangent_θ:: V
-  nscans::Int
-  nlos::Int
-  __logger::L
-
-
-  function RayTracingProblem(filename::String;
+function NCRayTracingProblem(filename::String;
     meantype::MT=GeometricMean(), model::AM=Ciddor(),
     earthmodel::EA=Fukushima(),
     logger=nothing,
@@ -213,15 +157,18 @@ struct RayTracingProblem{T<:AbstractFloat,MT<:MeanType,AM<:AirModel,
 
     L= typeof(logger)
 
-    new{T,MT,AM,EA,ATM,V,M,L}(
+    RayTracingProblem{T,MT,AM,EA,ATM,V,M,L}(
       filename, meantype, model, earthmodel,
       atmosphere,refractive,
       pointsx,pointsy,
       directionsx, directionsy,
       tangent_h,tangent_θ,
       nscans,nlos,logger )
-  end
 end
+
+
+
+
 Base.show(io::IO,::Type{<:RTP}) where {T<:AbstractFloat,MT<:MeanType,AM<:AirModel,
   EA<:EarthApproximation,ATM<:AtmosphereSetting,
   V<:AbstractVector{T},
@@ -233,9 +180,9 @@ Base.show(::IO, probl::RayTracingProblem{T,MT,AM,EA,ATM,V,M,L}
   M<:AbstractMatrix{T},L<:AbstractLogger} = begin
   println("RayTracingProblem{$T}:")
   println("   Filename: $(probl.filename)")
-  println("   MeanType: $(typeof(probl.meantype))")
-  println("   Model: $(typeof(probl.model))")
-  println("   Earth Model: $(typeof(probl.earthmodel))")
+  println("   MeanType: $(MT)")
+  println("   Air Model: $(AM)")
+  println("   Earth Model: $(EA)")
   println("   Number of scans: $(probl.nscans)")
   println("   Number of lines of sight: $(probl.nlos)")
 end

@@ -132,3 +132,34 @@ end
 @inline numshortf(n::T;digits=3,padding=10) where T<:Real = lpad(@sprintf("%.*f",digits,n),padding+digits)
 @inline numshort(n::Int;digits=3,padding=10) = lpad(@sprintf("%*i",digits,n),padding+digits)
 @inline textshort(n::String;digits=3,padding=10) = string(lpad(n,padding+digits))
+
+@doc """
+    `file_to_array(filename,header,type=Float64,spacer=" ")`
+
+Read a file and convert its contents into a vector of type `type`. The file is expected to have a header of `header` lines, which will be skipped.
+The contents of the file are split by the specified `spacer`, and each element is parsed to the specified `type`.
+
+# Arguments:
+- `filename::String`: The path to the file to be read.
+- `header::Int=0`: The number of header lines to skip in the file (default is 0).
+- `type::Type{T}=Float64`: The type to which the elements of the file will be parsed (default is `Float64`).
+- `spacer::S=" "`: The string used to split the contents of the file (default is a single space).
+
+# Returns:
+- `Vector{T}`: An array of type `T` containing the parsed elements from the file.
+
+# Example:
+```julia
+julia> file_to_array("data.txt", header=1, type=Float64, spacer=",")
+[1.0, 2.0, 3.0, 4.0]
+```
+"""
+@inline function file_to_array(filename::String,header::Int=0,type::Type{T}=Float64,spacer::S=" ") where {T,S<:AbstractString}
+  open(filename,"r") do io
+    lines=readlines(io)
+    lines=lines[header+1:end] # skip header lines
+    data = join(lines, spacer) |> d-> split(d, spacer) |>
+    d-> filter(x -> !isempty(x),d) |>
+    d-> map(x -> parse(T, x),d)
+  end
+end
