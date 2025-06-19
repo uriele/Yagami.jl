@@ -119,3 +119,25 @@ const PROBLPROPTOTAL= vcat(PROBLPROPDIRECT..., PROBLATMPROP..., PROBLKNOTS...)
 
 const ACCEPTABLE_TOLERANCE::Float64 =1e-5
 const FREESPACE::Float64 = 1.0 # free space index
+
+############################################################################################
+# Constants to read the Geofit format files
+############################################################################################
+
+# names of the Geofit input files
+const GEOFITFILES =[
+  "in_alt.dat",
+  "in_lat.dat",
+  "in_press.dat",
+  "in_temp.dat",
+  "in_vrm_prof.dat",
+]
+
+# headers of the Geofit input files
+const GEOFITHEADERS =[
+  24, # in_alt.dat
+  21, # in_lat.dat
+  19, # in_press.dat
+  19, # in_temp.dat
+  20, # in_vrm_prof.dat
+]
