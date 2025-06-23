@@ -2,29 +2,29 @@
 
 
 # Interface for Ciddor's refractive index model
-refractive_index(::Mathar013_025, temperature::T, pressure::T, wavelength::W=10.0,
-humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C} =  mathar013_025_refractive_index(temperature, pressure, wavelength, humidity)
+refractive_index(::Mathar013_025, temperature::T, pressure::T, wavelength::T=T(10.0),
+humidity::T=zero(T), CO2ppm::T=T(450.0)) where {T<:AbstractFloat} =  mathar013_025_refractive_index(temperature, pressure, wavelength, humidity)
 refractive_index!(::Mathar013_025, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T}, wavelength::W=10.0,
 humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C} = mathar013_025_refractive_index!(n,temperature, pressure, wavelength, humidity)
 
-refractive_index(::Mathar028_042, temperature::T, pressure::T, wavelength::W=10.0,
-humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C} = mathar028_042_refractive_index(temperature, pressure, wavelength, humidity)
+refractive_index(::Mathar028_042, temperature::T,pressure::T, wavelength::T=T(10.0),
+humidity::T=zero(T), CO2ppm::T=T(450.0)) where {T<:AbstractFloat} = mathar028_042_refractive_index(temperature, pressure, wavelength, humidity)
 refractive_index!(::Mathar028_042, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T},
  wavelength::W=10.0, humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C}=mathar028_042_refractive_index!(n,temperature, pressure, wavelength, humidity)
 
-refractive_index(::Mathar043_052, temperature::T, pressure::T, wavelength::W=10.0,
-humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C} =  mathar043_052_refractive_index(temperature, pressure, wavelength, humidity)
+refractive_index(::Mathar043_052, temperature::T,pressure::T, wavelength::T=T(10.0),
+humidity::T=zero(T), CO2ppm::T=T(450.0)) where {T<:AbstractFloat} =  mathar043_052_refractive_index(temperature, pressure, wavelength, humidity)
 refractive_index!(::Mathar043_052, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T}, wavelength::W=10.0,
 humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C}=
  mathar043_052_refractive_index!(n,temperature, pressure, wavelength, humidity)
 
-refractive_index(::Mathar075_141, temperature::T, pressure::T, wavelength::W=10.0,
-humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C} =  mathar075_141_refractive_index(temperature, pressure, wavelength, humidity)
+refractive_index(::Mathar075_141, temperature::T,pressure::T, wavelength::T=T(10.0),
+humidity::T=zero(T), CO2ppm::T=T(450.0)) where {T<:AbstractFloat} =  mathar075_141_refractive_index(temperature, pressure, wavelength, humidity)
 refractive_index!(::Mathar075_141, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T}, wavelength::W=10.0,
 humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C}= mathar075_141_refractive_index!(n,temperature, pressure, wavelength, humidity)
 
-refractive_index(::Mathar160_240, temperature::T, pressure::T, wavelength::W=10.0,
-humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C} =  mathar160_240_refractive_index(temperature, pressure, wavelength, humidity)
+refractive_index(::Mathar160_240, temperature::T,pressure::T, wavelength::T=T(10.0),
+humidity::T=zero(T), CO2ppm::T=T(450.0)) where {T<:AbstractFloat} =  mathar160_240_refractive_index(temperature, pressure, wavelength, humidity)
 refractive_index!(::Mathar160_240, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T}, wavelength::W=10.0,
 humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C}=
  mathar160_240_refractive_index!(n,temperature, pressure, wavelength, humidity)

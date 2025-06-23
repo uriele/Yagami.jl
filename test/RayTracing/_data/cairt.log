@@ -1,5 +1,5 @@
 ====================================================================
-Reading data from C:\Users\menar\.julia\dev\fortesting\Yagami.jl\test/RayTracing/_data/cairt.nc with model Ciddor() and meantype GeometricMean()
+Reading data from C:\Users\menar_sc11ao1\.julia\dev\Yagami.jl\test/RayTracing/_data/cairt.nc with model Ciddor() and meantype GeometricMean()
 ====================================================================
 Number of scans: 10, Number of lines of sight: 5
  
@@ -1048,6 +1048,8 @@ Temperature information:
     3.372e+02     1.800e+01     1.945e+02     7.930e+03     0.000e+00     0.000e+00     1.000e+01
     3.377e+02     1.800e+01     1.945e+02     7.897e+03     0.000e+00     0.000e+00     1.000e+01
     3.382e+02     1.800e+01     1.945e+02     7.857e+03     0.000e+00     0.000e+00     1.000e+01
+closing 131072
+end close 131072
     3.387e+02     1.800e+01     1.942e+02     7.938e+03     0.000e+00     0.000e+00     1.000e+01
     3.392e+02     1.800e+01     1.935e+02     7.895e+03     0.000e+00     0.000e+00     1.000e+01
     3.397e+02     1.800e+01     1.926e+02     7.913e+03     0.000e+00     0.000e+00     1.000e+01
@@ -3928,8 +3930,6 @@ Refractive index information:
            47            17     2.360e-01
            48            17     2.361e-01
            49            17     2.352e-01
-closing 131072
-end close 131072
            50            17     2.344e-01
            51            17     2.354e-01
            52            17     2.356e-01
@@ -4048,8 +4048,6 @@ end close 131072
             6            20     3.772e-01
             7            20     3.794e-01
             8            20     3.813e-01
-closing 131072
-end close 131072
             9            20     3.824e-01
            10            20     3.831e-01
            11            20     3.843e-01

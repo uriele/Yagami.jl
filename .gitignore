@@ -9,3 +9,5 @@ __*.jl
 /docs/Manifest*.toml
 /docs/build/
 ciddor_results.csv
+/test/MaterialProperties/pythonscript/__pycache__
+/test/MaterialProperties/pythonscript/__pycache__
