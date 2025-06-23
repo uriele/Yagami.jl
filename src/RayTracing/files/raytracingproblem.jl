@@ -78,5 +78,5 @@ for format in FORMATFILES
 end
 ##### Interfaces for different data formats #####
 RayTracingProblem(fileorfolder::String,::NCFormat;kwargs...)    = NCRayTracingProblem(fileorfolder;kwargs...)
-RayTracingProblem(fileorfolder::String,::MipasFormat;kwargs...) = GeofitRayTracingProblem(fileorfolder;kwargs...)
+RayTracingProblem(fileorfolder::String,::GeofitFormat;kwargs...) = GeofitRayTracingProblem(fileorfolder;kwargs...)
 #################################################################################################################

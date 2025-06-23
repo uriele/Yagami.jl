@@ -74,8 +74,8 @@ function raytracing!(
   directionsy = problem.directionsy
   refractive_grid = view(problem.refractive,:,:)
   Ni,Mi= size(refractive_grid) # number of angles and heights
-  knots_h = view(problem.atmosphere.temperature.knots_h,1:Ni)
-  knots_θ = view(problem.atmosphere.temperature.knots_θ,:)
+  knots_h = view(problem.atmosphere.temperature.knots_h,:)
+  knots_θ = view(problem.atmosphere.temperature.knots_θ,1:Ni)
   refractive_grid = problem.refractive
 
   model = problem.earthmodel
@@ -112,8 +112,8 @@ function raytracing_parallel!(
   directionsy = problem.directionsy
   refractive_grid = view(problem.refractive,:,:)
   Ni,Mi= size(refractive_grid) # number of angles and heights
-  knots_h = view(problem.atmosphere.temperature.knots_h,1:Ni)
-  knots_θ = view(problem.atmosphere.temperature.knots_θ,:)
+  knots_h = view(problem.atmosphere.temperature.knots_h,:)
+  knots_θ = view(problem.atmosphere.temperature.knots_θ,1:Ni)
   refractive_grid = problem.refractive
 
   model = problem.earthmodel
@@ -288,8 +288,8 @@ function solvenext!(iter::Int,zb::Z,
       end
 
     elseif (abs(fmin)< ACCEPTABLE_TOLERANCE) ||
-      hk< hmin ||
-      hk > hmax
+      hk<= hmin+ACCEPTABLE_TOLERANCE ||
+      hk >= hmax+ACCEPTABLE_TOLERANCE
       if isdescending
         idx_j += 1 # set the next index
       else
@@ -371,7 +371,6 @@ end
   MA<:AbstractMatrix{T},Z<:Zbrent{F,T}
 }
 
-  N= length(knots_θ)-1
   M= length(knots_h)-1
   niters= length(res)-1 # number of iterations to perform
   # Initialize the ray structure

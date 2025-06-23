@@ -77,6 +77,8 @@ h=create_hlevelset()
   end
 end
 
+using Test
+using Yagami.RayTracing: snellslaw!
 @testset "Snell's Law" begin
   normal= [-1.0,0.0] # consider a outward normal to the surface
   direction= [sind(45.0), cosd(45.0)]
@@ -85,10 +87,28 @@ end
   snellslaw!(;normal=normal, direction=direction)
   @test direction==direction_test # direction should not change
 
-  # sin(θ1)/sin(θ2) = n2/n1
-  sindout=cosd(45.)/1.5
-  direction_test2 = [sqrt(1-sindout^2), sindout]
+  n1=refractive_index(Ciddor(), 272.15, 101325.0, 10.0, 0.0, 0.0)
+  n2=refractive_index(Carlotti(), 272.15, 101320.0, 10.0, 0.0, 0.0)
 
-  snellslaw!(;normal=normal, direction=direction,n_transmitted=1.5)
-  @test direction ≈ direction_test2
+  n21 = n2/n1
+
+  @inline matrix_rotation(θ,v) = [cosd(θ) sind(θ); -sind(θ)  cosd(θ)] * v
+
+  @testset "Symmetry over rotation" begin
+    for rot in LinRange(0,180,180)
+      normal_rotated = matrix_rotation(rot, normal)
+      @testset "Rotation $rot" begin
+        for ang in 2:89
+          sindout=cosd(ang)/n21
+          direction_local=[sind(ang), cosd(ang)]
+          direction_test2 = [sqrt(1-sindout^2), sindout]
+          direction_local = matrix_rotation(rot, direction_local)
+          direction_test2 = matrix_rotation(rot, direction_test2)
+          snellslaw!(;normal=normal_rotated, direction=direction_local,n_incident=n1,n_transmitted=n2)
+          @test direction_local ≈ direction_test2
+          @test direction_local != [sind(ang), cosd(ang)]
+        end
+      end
+    end
+  end
 end

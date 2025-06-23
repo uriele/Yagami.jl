@@ -14,6 +14,7 @@ Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 LoggingExtras = "e6f89c97-d47a-5376-807f-9c37f3926c36"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Moshi = "2e0e35c7-a2e4-4343-998d-7ef72827ed2d"
 NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
 NaturalNeighbours = "f16ad982-4edb-46b1-8125-78e5a8b5a9e6"
@@ -25,12 +26,6 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
-
-[weakdeps]
-Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
-
-[extensions]
-MakieExt = ["Makie"]
 
 [compat]
 CoordRefSystems = "0.17.7"

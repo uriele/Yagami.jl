@@ -49,6 +49,9 @@ include("files/raytracingproblem.jl")
 include("tracing/snellslaw.jl")
 include("tracing/minimizationintersection.jl")
 
+include("viz/plots.jl")
+
+export raytracing_grid!
 
 export RayTracingProblem,AtmosphereSetting
 export EarthApproximation, Fukushima, Bowring

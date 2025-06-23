@@ -1,19 +1,77 @@
-using ..YagamiCore: file_to_array
+using ..YagamiCore: file_to_array,vmr_to_namedtuple
+using Logging,LoggingExtras
+using Moshi.Match:@match
+using DocStringExtensions
+@inline function __test_files_existance(inp_folder::S,logger::L=NullLogger()) where {S<:AbstractString,L<:AbstractLogger}
 
-@inline __test_files_existance(inp_folder::String) =begin
   # check all the files necessary exists in the folder
-  for (file,header) in (GEOFITFILES,GEOFITHEADERS)
-  altitude_file = joinpath(inp_folder, "in_alt.dat")
-  if !isfile(altitude_file)
-    errormessage = "Altitude file not found: $altitude_file in folder $inp_folder"
-    with_logger(logger)
-      @error errormessage
-      @error "Please ensure that the altitude file is present in the specified folder."
+  for (file) in (GEOFITFILES)
+    input_file = joinpath(inp_folder, file)
+    if !isfile(input_file)
+      errormessage = "file not found: $file in folder $inp_folder"
+      with_logger(logger) do
+        @error errormessage
+        @error "Please ensure that the altitude file is present in the specified folder."
+      end
+      throw(ArgumentError(errormessage))
     end
-    throw(ArgumentError(errormessage))
   end
 end
 
+
+@inline function __read_orbit_file(filename::String, logger::L=NullLogger()) where {L<:AbstractLogger}
+  # read the orbit file and return the radius and azimuth angles
+  open(filename, "r") do io
+    lines = readlines(io)
+    with_logger(logger) do
+      @info "Reading orbit file: $filename"
+
+      str= textshort("X [km]",padding=15) *
+           textshort("Y [km]",padding=15) *
+           textshort("Limb ang [°]",padding=15) *
+           textshort("dirX",padding=15) *
+           textshort("dirY",padding=15) *
+           textshort("tq_h [km]",padding=15) *
+           textshort("tq_θ [°]",padding=15)
+      @info str
+    end
+
+    # find all sequence lines
+    pos=findall(x->!isnothing(match(r"^\sSEQUENCE",x)),lines);
+
+    nscans = length(pos)
+    # assume same number of lines of sight for each scan
+    nlos   = parse(Int,lines[pos[1]+6])
+
+    orbit = zeros(Float64, 6, nlos* nscans)
+
+    @inbounds for i in eachindex(pos)
+       @inbounds for j in 1:nlos
+        sj=pos[i]+7+j
+        input_read=parse.(Float64,split(lines[sj]))
+
+        pointx = input_read[2] # x coordinate of the point
+        pointy = input_read[1] # y coordinate of the point
+        angle = input_read[3] # limb angle in degrees
+        dirx,diry=limb_angle_normal(-pointx, -pointy, -angle) # calculate the limb direction normal
+
+        with_logger(logger) do
+          str = numshortf(pointx,padding=10,digits=8) *
+                numshortf(pointy,padding=10,digits=8) *
+                numshortf(angle,padding=10,digits=8) *
+                numshortf(dirx,padding=10,digits=8) *
+                numshortf(diry,padding=10,digits=8) *
+                numshortf(input_read[4],padding=15) *
+                numshortf(input_read[5],padding=15)
+          @info str
+        end
+
+        orbit[:,(i-1)*nlos+j] = [pointx,pointy, dirx, diry, input_read[4], input_read[5]]
+      end
+    end
+    orbit,nscans,nlos
+  end
+end
 
 """
    $SIGNATURES
@@ -40,165 +98,125 @@ function GeofitRayTracingProblem(folder::String;
     EA<:EarthApproximation
   }
 
-  inp_folder=joinpath(folder)
-
-  # check if all necessary files are present in the folder
-  __test_files_existance(inp_folder)
-
-  # sanity check for dimensions
-  nalt=open(altitude_file, "r") do f
-    convert(Int,readlines(f)[22])
-  end
-  nazimuth=open(azimuth_file, "r") do f
-    convert(Int,readlines(f)[16])
-  end
-  #
+  inp_folder=joinpath(folder,"INP_FILES")
 
 
-
-
-  altitude_header = 24
-  hᵢ=file_to_array(altitude_file, altitude_header, Float64, " ") # read the altitude file
-
-  azimuth_file = joinpath(inp_folder, "in_lat.dat")
-  azimuth_header = 15
-
-  θᵢ=file_to_array(azimuth_file, azimuth_header, Float64, " ") # read the azimuth file
-
-    logger = @match logger begin
+  logger = @match logger begin
       ::AbstractString => infologger(logger)
       ::AbstractLogger => logger
       _ => NullLogger()
+  end
+
+
+  # check if all necessary files are present in the folder
+  __test_files_existance(inp_folder,logger)
+
+
+
+  filename= joinpath(inp_folder,GEOFITFILES[1])
+  hᵢ = file_to_array(filename, GEOFITHEADERS[1]) # read the input file
+  filename= joinpath(inp_folder,GEOFITFILES[2])
+  θᵢ = file_to_array(filename, GEOFITHEADERS[2]) # read the input file
+  filename= joinpath(inp_folder,GEOFITFILES[3])
+  pressureᵢ = file_to_array(joinpath(inp_folder, GEOFITFILES[3]), GEOFITHEADERS[3]) # read the input file
+  filename= joinpath(inp_folder,GEOFITFILES[4])
+  temperatureᵢ = file_to_array(joinpath(inp_folder, GEOFITFILES[4]), GEOFITHEADERS[4]) # read the input file
+
+
+  naltitude = length(hᵢ)
+  nazimuth = length(θᵢ)
+
+  temperatureᵢ = reshape(temperatureᵢ, naltitude, nazimuth) |> permutedims
+  pressureᵢ = reshape(pressureᵢ, naltitude, nazimuth) |> permutedims
+
+  #@eval $(GEOFITVARNAMES[end])=vrm_to_namedtuple(joinpath(inp_folder, GEOFITFILES[end]), GEOFITHEADERS[end])
+  knots_h = file_to_array(joinpath(inp_folder, "in_levels.dat"), 0)
+  knots_θ = file_to_array(joinpath(inp_folder, "in_radii.dat"), 0)
+  sort!(knots_h;rev=true) # sort the knots in descending order
+  knots_θ.-= 90 # convert the azimuth angles to the range [-90, 90]
+  knots_θ= mod.(knots_θ, 360) # ensure the azimuth angles are in the range [0, 360)
+  sort!(knots_θ) # sort the azimuth angles in descending order
+
+  idx_theta = similar(θᵢ,Int)
+  θᵢ .-=90
+  θᵢ   = mod.(θᵢ, 360) # ensure the azimuth angles are in the range [0, 360)
+  sortperm!(idx_theta, θᵢ) # sort the azimuth angles in descending order
+  θᵢ = θᵢ[idx_theta] # sort the azimuth angles in descending order
+  idx_h = similar(hᵢ,Int)
+  sortperm!(idx_h, hᵢ;rev=true) # sort the altitude points in descending order
+  hᵢ = hᵢ[idx_h] # sort the altitude points in descending order
+  temperatureᵢ = temperatureᵢ[idx_theta,idx_h] # sort the temperature profile according to the azimuth angles
+  pressureᵢ = pressureᵢ[idx_theta,idx_h] # sort the pressure profile according to the azimuth angles
+
+  @info knots_h
+  @info knots_θ
+
+  with_logger(logger) do
+    @info "Read $(length(hᵢ)) altitude points and $(length(θᵢ)) azimuth points."
+    @info "Temperature profile: $(size(temperatureᵢ))"
+    @info "Pressure profile: $(size(pressureᵢ))"
+  end
+
+  with_logger(logger) do
+    @info "Read $(length(hᵢ)) altitude points and $(length(θᵢ)) azimuth points."
+    @info "Temperature profile: $(size(temperatureᵢ))"
+    @info "Pressure profile: $(size(pressureᵢ))"
+    for (h, θ, temperature, pressure) in zip(hᵢ, θᵢ, temperatureᵢ, pressureᵢ)
+      str= numshort(h,padding=10) *
+           numshort(θ,padding=10) *
+           numshortf(temperature,padding=10) *
+           numshortf(pressure,padding=10)
+      @info str
     end
 
-    # number of scans
-    nscans = nc.dim["nscans"]
-    nlos   = nc.dim["nlos"]
-
-    with_logger(logger) do
-      @info "===================================================================="
-      @info "Reading data from $filename with model $model and meantype $meantype"
-      @info "===================================================================="
-      @info "Number of scans: $nscans, Number of lines of sight: $nlos"
-      @info " "
+    @info "Knots for altitude: $(knots_h)"
+    @info "Knots for azimuth: $(knots_θ)"
+    for (h, θ) in zip(knots_h, knots_θ)
+      str = numshort(h,padding=10) * numshort(θ,padding=10)
+      @info str
     end
 
-    ncscan = nc.group["scans"];
-    ncatm  = nc.group["atm"];
-    ncorbit= nc.group["orbit"];
-
-    # read the data
-    tangent_h = ncscan["tangent_points"][1,:,:]
-    tangent_θ = ncscan["tangent_points"][2,:,:]
-
-    # read info
-    r_sat = ncorbit["radius"][1]
-    θ_sat = ncscan["scans_phi"][:]
-    view_angle = ncscan["view_angles"][:,:]
-
-    pointsx = similar(θ_sat,size(view_angle))
-    pointsy = similar(pointsx)
-    directionsx = similar(pointsx)
-    directionsy = similar(pointsy)
+  end
 
 
-    hᵢ=earthmodelfunction(earthmodel)
+
+  atmosphere=create_atmosphere(;θᵢ=θᵢ,hᵢ=hᵢ,
+    temperatureᵢ=temperatureᵢ,
+    pressureᵢ=pressureᵢ,
+    knots_θ=knots_θ,
+    knots_h=knots_h)
+  refractive= grid_refractiveindex(atmosphere;model=Ciddor(),meantype=GeometricMean())
+
+  #####################################################################
+  orbit,nscans,nlos=__read_orbit_file(joinpath(inp_folder, "orbit.dat"), logger)
+  # orbit file points
+  pointsx=orbit[1,:] # x coordinates of the points
+  pointsy=orbit[2,:] # y coordinates of the points
+  directionsx=orbit[3,:] # x components of the directions
+  directionsy=orbit[4,:] # y components of the directions
+  tangent_h=orbit[5,:] # tangent heights
+  tangent_θ=orbit[6,:] # tangent azimuths
+  #####################################################################
+  V=typeof(directionsx)
+  M=typeof(refractive)
+  T=eltype(directionsx)
+  ATM= typeof(atmosphere)
+
+  with_logger(logger) do
+    atmosphere_info(atmosphere)
+    refractive_info(refractive)
+  end
 
 
-    with_logger(logger) do
-      @info "Calculating points and directions for the satellite scans"
-
-      @info "$(textshort("los")) $(textshort("scan")) $(textshort("x [km]")) $(textshort("y [km]")) $(textshort("dx")) $(textshort("dy")) $(textshort("view angle [°]")) $(textshort("qt h [km]")) $(textshort("qt θ [°]"))"
-    end
-    a² = MAJORAXIS()*MAJORAXIS()
-    b² = MINORAXIS()*MINORAXIS()
-    @inbounds for j in axes(pointsx,2)
-      pointx =r_sat * cosd(θ_sat[j])
-      pointy =r_sat * sind(θ_sat[j])
-      #h,θ=fearth(pointx,pointy,MAJORAXIS(),MINORAXIS(),COMPLECCENTRICITY²())
-      ############################################
-      # I do not need theta and since I know that at every point
-      # the normal is equal to
-      #  n~(x/a^2,y/b^2)/|*|  =>  n~(x/a^2*b^2,y)/|*|
-      ############################################
-      normalx = pointx/a²
-      normaly = pointy/b²
-      norm_hypot = hypot(normalx, normaly)
-      normalx /= norm_hypot
-      normaly /= norm_hypot
-      ###########################################
-      @inbounds for i in axes(pointsy,1)
-        pointsx[i,j] = pointx
-        pointsy[i,j] = pointy
-        directionsx[i,j],directionsy[i,j] = nadir_angle_normal(-normalx,-normaly,-view_angle[i,j])
-        with_logger(logger) do
-          @info "$(numshort(i))  $(numshort(j))  $(numshort(pointx))  $(numshort(pointy))  $(numshort(directionsx[i,j]))  $(numshort(directionsy[i,j]))  $(numshort(view_angle[i,j])) $(numshort(tangent_h[i,j]))  $(numshort(tangent_θ[i,j]))"
-        end
-      end
-    end
-    pointsx=pointsx[:]
-    pointsy=pointsy[:]
-    directionsx=directionsx[:]
-    directionsy=directionsy[:]
-    tangent_h=tangent_h[:]
-    tangent_θ=tangent_θ[:]
-    hᵢ = ncatm["z"][:]
-    θᵢ = ncatm["phi"][:]
-
-    # not used for now
-    hitrancodes =ncatm["hitran"][:]
-
-    pressure = ncatm["pressure"][:,:] |> permutedims |>
-      fn-> @. uconvert(Pa, fn*hPa)  |> # convert to hP
-      fn-> @. ustrip(fn)
-    temperature = ncatm["temperature"][:,:] |> permutedims
-
-    # sort in the reverse order of height
-    idxj=similar(hᵢ,Int)
-    sortperm!(idxj,hᵢ;rev=true) # sort indices in descending order
-    hᵢ= hᵢ[idxj] # sort height by index
-    idxi=similar(θᵢ,Int)
-
-    # sort in the range [0,360)
-    θᵢ = @. mod(θᵢ, 360) # ensure angles are in [0,360)
-    sortperm!(idxi,θᵢ) # sort indices in ascending order
-    θᵢ = θᵢ[idxi] # sort angles by index
-
-    # sort the pressure and temperature
-    temperature = temperature[idxi,idxj] # sort temperature by index
-    pressure = pressure[idxi,idxj] # sort pressure by index
-
-    temperature[ismissing.(temperature)] .= NaN
-    pressure[ismissing.(pressure)] .= NaN
-    pressure = convert(Matrix{Float64}, pressure) # convert to Float64
-    temperature = convert(Matrix{Float64}, temperature) # convert to Float64
-
-    # create the atmosphere object to be used also in CG Integral
-    atmosphere=create_atmosphere(;θᵢ=θᵢ,hᵢ=hᵢ,
-      temperatureᵢ=temperature,
-      pressureᵢ=pressure,
-      knots_θ=θᵢ,
-      knots_h=hᵢ)
+  L= typeof(logger)
 
 
-    refractive= grid_refractiveindex(atmosphere;model=Ciddor(),meantype=GeometricMean())
-    V=typeof(directionsx)
-    M=typeof(refractive)
-    T=eltype(directionsx)
-    ATM= typeof(atmosphere)
-
-    with_logger(logger) do
-      atmosphere_info(atmosphere)
-      refractive_info(refractive)
-    end
-
-    L= typeof(logger)
-
-    new{T,MT,AM,EA,ATM,V,M,L}(
+  RayTracingProblem{T,MT,AM,EA,ATM,V,M,L}(
       filename, meantype, model, earthmodel,
       atmosphere,refractive,
       pointsx,pointsy,
       directionsx, directionsy,
       tangent_h,tangent_θ,
-      nscans,nlos,logger )
+      nscans,nlos,logger
+  )
 end

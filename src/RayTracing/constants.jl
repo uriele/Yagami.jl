@@ -128,11 +128,12 @@ const FREESPACE::Float64 = 1.0 # free space index
 const GEOFITFILES =[
   "in_alt.dat",
   "in_lat.dat",
-  "in_press.dat",
+  "in_pres.dat",
   "in_temp.dat",
-  "in_vrm_prof.dat",
+  "in_vmr_prof.dat",
 ]
 
+#=
 # headers of the Geofit input files
 const GEOFITHEADERS =[
   24, # in_alt.dat
@@ -140,4 +141,22 @@ const GEOFITHEADERS =[
   19, # in_press.dat
   19, # in_temp.dat
   20, # in_vrm_prof.dat
+]
+=#
+
+# headers of the Geofit input files
+const GEOFITHEADERS =[
+  16, # in_alt.dat
+  15, # in_lat.dat
+  13, # in_press.dat
+  13, # in_temp.dat
+  20, # in_vrm_prof.dat
+]
+
+const GEOFITVARNAMES =[
+  :hᵢ, # in_alt.dat
+  :θᵢ,  # in_lat.dat
+  :pressureᵢ, # in_press.dat
+  :temperatureᵢ, # in_temp.dat
+  :vrm_profileᵢ # in_vrm_prof.dat
 ]

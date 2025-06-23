@@ -27,11 +27,15 @@ module MaterialProperties
   The refractive index is calculated using the specified air model and parameters.
   # Arguments
   - `model::G`: The air model to use for the calculation, which must be a subtype of `AirModel`.
-  - `params::Vararg{AbstractFloat,4}`: The parameters for the refractive index calculation, which can be wavelength, temperature, pressure, and humidity.
+  - `temperature::Real`: The temperature in Kelvin.
+  - `pressure::Real`: The pressure in Pascals.
+  - `wavelength::Real`: The wavelength in micrometers.
+  - `humidity::Real`: The relative humidity as a percentage (0-100).
+  - `CO2ppm::Real`: The CO2 concentration in parts per million (ppm
   # Returns
   - The refractive index of air at the specified wavelength and conditions.
   """
-  refractive_index(model::G,params::Vararg{Int,5}) where {G <: AirModel} = refractive_index(model,float.(params...)...)
+  refractive_index(model::G,temperature::Real, pressure::Real, wavelength::Real, humidity::Real, CO2ppm::Real) where {G <: AirModel} = refractive_index(model,float.(params...)...)
 
   """
      $SIGNATURES
@@ -39,11 +43,15 @@ module MaterialProperties
   The refractive index is calculated using the specified air model and parameters.
   # Arguments
   - `model::G`: The air model to use for the calculation, which must be a subtype of `AirModel`.
-  - `args::Vararg{AbstractFloat,4}`: The parameters for the refractive index calculation, which can be wavelength, temperature, pressure, and humidity.
-  # Returns
-  - The refractive index of air at the specified wavelength and conditions.
+  - `n::A`: An array to store the calculated refractive index values.
+  - `temperature::A`: An array of temperatures in Kelvin.
+  - `pressure::A`: An array of pressures in Pascals.
+  - `wavelength::A`: An array of wavelengths in micrometers.
+  - `humidity::A`: An array of relative humidity values as percentages (0-100).
+  - `CO2ppm::A`: An array of CO2 concentrations in parts per million
+
   """
-  refractive_index!(::G,::A,::A,::W,::H,::C) where {G <: AirModel,A,W,H,C} = throw(ArgumentError("MaterialProperties.jl: refractive_index! does not support the current model, use $CURRENTAirModel instead."))
+  refractive_index!(model::G,n::A,temperature::A,pressure::A,wavelength::A,humidity::A,CO2ppm::A) where {G <: AirModel,A} = throw(ArgumentError("MaterialProperties.jl: refractive_index! does not support the current model, use $CURRENTAirModel instead."))
 
   # ciddor refractive index model
   include("models/ciddor.jl")
