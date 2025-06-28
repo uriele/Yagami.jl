@@ -54,14 +54,14 @@ struct AtmInterpolate{N,M,T<:AbstractFloat,VN<:AbstractVector{T},VM<:AbstractVec
     N,M= size(parameters)
     Ni,Mi=length(knots_θ),length(knots_h)
 
-    @assert(N == Ni && M == Mi, "knots_θ and knots_h must have the same length as the number of rows and columns of parameters but got knots_θ=$knots_θ, knots_h=$knots_h, parameters=$parameters.")
+    @assert(N == Ni && M == Mi, "knots_θ and knots_h must have the same length as the number of rows and columns of parameters but got knots_θ=$(length(knots_θ)), knots_h=$(length(knots_h)), parameters=$parameters.")
     ##############################################################################################################
-    @assert(issorted(knots_h, rev=true), "knots_h must be sorted in descending order but got knots_h=$knots_h.")
-    @assert(minimum(knots_h) >= 0, "knots_h must be non-negative but got knots_h=$knots_h.")
-    @assert(isunique(knots_h), "knots_h must be unique but got knots_h=$knots_h.")
+    @assert(issorted(knots_h, rev=true), "knots_h must be sorted in descending order but got knots_h=$(length(knots_h)).")
+    @assert(minimum(knots_h) >= 0, "knots_h must be non-negative but got knots_h=$(length(knots_h)).")
+    @assert(isunique(knots_h), "knots_h must be unique but got knots_h=$(length(knots_h)).")
     ###############################################################################################################
     knots_θ .= @. mod(knots_θ, 360)
-    @assert(isunique(knots_θ), "knots_θ must be unique but got knots_θ=$knots_θ.")
+    @assert(isunique(knots_θ), "knots_θ must be unique but got knots_θ=$(length(knots_θ)).")
     @assert(issorted(knots_θ), "knots_θ must be sorted in ascending order in the range [0,360).") # this would help with generating the
     ###############################################################################################################
     # interpolation matrix
@@ -159,9 +159,17 @@ end
   j = __geth(h, itp.knots_h, __hmin, __hmax, M)
   i = __getθ(θ, itp.knots_θ, __θmin, __θmax, N)
 
+
+  # This is to take into accont the existance of NaN in the matrix
+  θi=itp.knots_θ[i]
+  hj=itp.knots_h[j]
+
+  ((θi==θ) && (hj==h)) && return getfield(itp,:A)[i,j]
+  ####################################################################
+
+
   Δθ = mod(itp.knots_θ[i+1] - itp.knots_θ[i],360)
   fθ = mod(θ - itp.knots_θ[i],360) / Δθ
-
 
 
   aij=(getfield(itp,:A)[i,j]*(1-fθ)+(fθ)*getfield(itp,:A)[i+1,j])
@@ -192,6 +200,15 @@ end
   θ=mod(θ, 360) # ensure θ is in the range [0,360)
   j = __geth(h, itp.knots_h, __hmin, __hmax, M)
   i = __getθ(θ, itp.knots_θ, __θmin, __θmax, N)
+
+
+  # This is to take into accont the existance of NaN in the matrix
+  θi=itp.knots_θ[i]
+  hj=itp.knots_h[j]
+
+  ((θi==θ) && (hj==h)) && return getfield(itp,:A)[i,j]
+  ####################################################################
+
 
   Δθ = mod(itp.knots_θ[i+1] - itp.knots_θ[i],360)
   fθ = mod(θ - itp.knots_θ[i],360) / Δθ

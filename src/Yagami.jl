@@ -31,5 +31,5 @@ using .RayTracing
 
 @reexport using .CurtisGodson: QuadraturePoints, get_quadrature_points, linintegral
 
-@reexport using .RayTracing: azimuthlocal, altitudelocal, pointxlocal, pointylocal, lengthlocal
+@reexport using .RayTracing: azimuthlocal, altitudelocal, pointxlocal, pointylocal, lengthlocal, ilocal,jlocal
 end

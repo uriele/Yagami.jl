@@ -48,22 +48,38 @@ SimpleResult(pointx::T=MAJORAXIS(), pointy::T=MINORAXIS(), directionx::T=0.0, di
 
   azimuthlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
+    isnothing(idx) && return results.azimuth[:,i]
     results.azimuth[1:idx-1,i]
   end
   altitudelocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
+    isnothing(idx) && return results.altitude[:,i]
     results.altitude[1:idx-1,i]
   end
   pointxlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
+    isnothing(idx) && return results.pointx[:,i]
     results.pointx[1:idx-1,i]
   end
   pointylocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
+    isnothing(idx) && return results.pointy[:,i]
     results.pointy[1:idx-1,i]
   end
 
   lengthlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
+    isnothing(idx) && return results.length_t[:,i]
     results.length_t[1:idx-1,i]
+  end
+
+  ilocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+    idx= findfirst(results.length_t[:,i] .== 0)
+    isnothing(idx) && return results.i[:,i]
+    results.i[1:idx-1,i]
+  end
+  jlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+    idx= findfirst(results.length_t[:,i] .== 0)
+    isnothing(idx) && return results.j[:,i]
+    results.j[1:idx-1,i]
   end

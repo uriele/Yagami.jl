@@ -1,4 +1,71 @@
 using UnPack:@unpack
+using Logging,LoggingExtras
+
+
+struct DebugLogger{L<:AbstractLogger} <: AbstractLogger
+  logger::L
+end
+
+# Forwarded methods for DebugLogger
+Logging.min_enabled_level(logger::DebugLogger) =
+    min_enabled_level(logger.logger)
+
+Logging.shouldlog(logger::DebugLogger, level, mod, group, id) =
+    shouldlog(logger.logger, level, mod, group, id)
+
+Logging.handle_message(logger::DebugLogger, level, message, mod, group, id, file, line) =
+    handle_message(logger.logger, level, message, mod, group, id, file, line)
+
+Logging.with_logger(f::Function, logger::DebugLogger) =
+    with_logger(f, logger.logger)
+
+Logging.global_logger(logger::DebugLogger) =
+    global_logger(logger.logger)
+
+function DebugLogger(filename::String)
+  DebugLogger(infologger(filename))
+end
+
+
+@inline write_line_logger(logger::L,zb::ZB,ray::Int,iter::Int) where {L<:AbstractLogger, ZB<:Zbrent} = nothing
+
+@inline function write_line_logger(logger::DL,zb::ZB,ray::Int,iter::Int) where {DL<:DebugLogger, ZB<:Zbrent}
+  with_logger(logger) do
+    iter==1 && @info "Ray: $ray"
+    i= zb.f.i
+    j= zb.f.j
+    pointx = zb.f.pointx
+    pointy = zb.f.pointy
+    directionx = zb.f.directionx
+    directiony = zb.f.directiony
+    altitude,azimuth=__innerfunc(zb,pointx,pointy)
+    fmin= zb.fx
+    length_t   = zb.x
+    a   = zb.a
+    b   = zb.b
+    niter= zb.__iter
+
+    spacing=textshort(" ";padding=4)
+    rowstr = [
+            spacing,
+            numshort(iter,        padding=10),
+            numshort(i,           padding=8),
+            numshort(j,           padding=8),
+            numshortf(pointx,      padding=8),
+            numshortf(pointy,      padding=8),
+            numshortf(directionx,  padding=8),
+            numshortf(directiony,  padding=8),
+            numshortf(altitude,    padding=8),
+            numshortf(azimuth,     padding=8),
+            numshortf(length_t,    padding=8),
+            numshortf(a, padding=10),
+            numshortf(b, padding=10),
+            numshort(fmin, padding=10),
+            numshort(niter, padding=10),
+    ]
+    @info join(rowstr, "")
+  end
+end
 
 
 
@@ -71,8 +138,11 @@ using UnPack:@unpack
     @info "============================================================"
   end
 end
-write_tracing_log(::NullLogger, ::RR,::M) where {T<:AbstractFloat,RR<:AbstractMatrix{<:AbstractResult{T}},M<:AbstractMatrix{T}} = nothing
+@inline write_tracing_log(::NullLogger, ::RR,::M) where {T<:AbstractFloat,RR<:AbstractMatrix{<:AbstractResult{T}},M<:AbstractMatrix{T}} = nothing
 
+@inline write_tracing_log(::DL, ::RR,::M) where {T<:AbstractFloat,
+  RR<:AbstractMatrix{<:AbstractResult{T}},
+  M<:AbstractMatrix{T}, DL<:DebugLogger} = nothing
 
 
 

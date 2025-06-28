@@ -24,6 +24,8 @@ function NCRayTracingProblem(filename::String;
     meantype::MT=GeometricMean(), model::AM=Ciddor(),
     earthmodel::EA=Fukushima(),
     logger=nothing,
+    humidity::Real=0.0, # used to override the humidity in the file
+    co2ppm::Real=400.0, # used to override the CO2 concentration in the file
   )   where {MT<:MeanType,AM<:AirModel,
     EA<:EarthApproximation
   }
@@ -44,6 +46,7 @@ function NCRayTracingProblem(filename::String;
       @info "Reading data from $filename with model $model and meantype $meantype"
       @info "===================================================================="
       @info "Number of scans: $nscans, Number of lines of sight: $nlos"
+      @info "humidity: $(humidity*100)%, CO2 concentration: $co2ppm ppm"
       @info " "
     end
 
@@ -112,7 +115,7 @@ function NCRayTracingProblem(filename::String;
     hitrancodes =ncatm["hitran"][:]
 
     pressure = ncatm["pressure"][:,:] |> permutedims |>
-      fn-> @. uconvert(Pa, fn*hPa)  |> # convert to hP
+      fn-> @. uconvert(Pa, fn*hPa)  |> # convert to Pa
       fn-> @. ustrip(fn)
     temperature = ncatm["temperature"][:,:] |> permutedims
 
@@ -140,6 +143,8 @@ function NCRayTracingProblem(filename::String;
     atmosphere=create_atmosphere(;θᵢ=θᵢ,hᵢ=hᵢ,
       temperatureᵢ=temperature,
       pressureᵢ=pressure,
+      humidity=humidity,
+      co2ppm=co2ppm,
       knots_θ=θᵢ,
       knots_h=hᵢ)
 

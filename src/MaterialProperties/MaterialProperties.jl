@@ -35,7 +35,9 @@ module MaterialProperties
   # Returns
   - The refractive index of air at the specified wavelength and conditions.
   """
-  refractive_index(model::G,temperature::Real, pressure::Real, wavelength::Real, humidity::Real, CO2ppm::Real) where {G <: AirModel} = refractive_index(model,float.(params...)...)
+  refractive_index(model::G,temperature::T, pressure::T, wavelength::T,
+  humidity::T, CO2ppm::T) where {G <: AirModel,T<:AbstractFloat} = throw(ArgumentError("MaterialProperties.jl: refractive_index does not support $G, use $CURRENTAirModel instead."))
+
 
   """
      $SIGNATURES

@@ -94,6 +94,8 @@ function GeofitRayTracingProblem(folder::String;
     meantype::MT=GeometricMean(), model::AM=Ciddor(),
     earthmodel::EA=Fukushima(),
     logger=nothing,
+    humidity::Real=0.0, # used to override the humidity in the file
+    co2ppm::Real=400.0,
   )   where {MT<:MeanType,AM<:AirModel,
     EA<:EarthApproximation
   }
@@ -127,7 +129,9 @@ function GeofitRayTracingProblem(folder::String;
   nazimuth = length(θᵢ)
 
   temperatureᵢ = reshape(temperatureᵢ, naltitude, nazimuth) |> permutedims
-  pressureᵢ = reshape(pressureᵢ, naltitude, nazimuth) |> permutedims
+  pressureᵢ = reshape(pressureᵢ, naltitude, nazimuth) |> permutedims |>
+      fn-> @. uconvert(Pa, fn*hPa)  |> # convert to Pa
+      fn-> @. ustrip(fn)
 
   #@eval $(GEOFITVARNAMES[end])=vrm_to_namedtuple(joinpath(inp_folder, GEOFITFILES[end]), GEOFITHEADERS[end])
   knots_h = file_to_array(joinpath(inp_folder, "in_levels.dat"), 0)
@@ -147,9 +151,6 @@ function GeofitRayTracingProblem(folder::String;
   hᵢ = hᵢ[idx_h] # sort the altitude points in descending order
   temperatureᵢ = temperatureᵢ[idx_theta,idx_h] # sort the temperature profile according to the azimuth angles
   pressureᵢ = pressureᵢ[idx_theta,idx_h] # sort the pressure profile according to the azimuth angles
-
-  @info knots_h
-  @info knots_θ
 
   with_logger(logger) do
     @info "Read $(length(hᵢ)) altitude points and $(length(θᵢ)) azimuth points."

@@ -96,6 +96,9 @@ export raytracing!, raytracing_parallel!
 
 export SimpleResult,AbstractResult
 
-export azimuthlocal, altitudelocal, pointxlocal, pointylocal, lengthlocal
+export azimuthlocal, altitudelocal, pointxlocal, pointylocal, lengthlocal, ilocal, jlocal
+
+# use to test the output of the ray tracing and look for bugs
+export DebugLogger
 
 end
