@@ -20,8 +20,11 @@ mutable struct DistanceFunc{F,T<:AbstractFloat}
     descending::Bool
     # find automatically if it hits a level or a radii to compute the normal
     islevel::Bool
+    __a::Base.RefValue{T}
+    __b::Base.RefValue{T}
+    __c²::Base.RefValue{T}
     #
-    @inline function DistanceFunc(f::F=___altitudeangle_fukushima, pointx::T=DFPOINTX, pointy::T=DFPOINTY,
+    function DistanceFunc(f::F=___altitudeangle_fukushima, pointx::T=DFPOINTX, pointy::T=DFPOINTY,
                                      directionx::T=DFDIRECTIONX,directiony::T=DFDIRECTIONY,
                                      hmin::T=DFHMIN, hmax::T=DFHMAX,
                                      θmin::T=DFTHMIN, θmax::T=DFTHMAX,n::T=FREESPACE) where {F,T<:AbstractFloat}
@@ -31,8 +34,13 @@ mutable struct DistanceFunc{F,T<:AbstractFloat}
       directionx /= direction_norm
       directiony /= direction_norm
 
+      # Force the latest version of MAJORAXIS, MINORAXIS, and COMPLECCENTRICITY²
+      _a  = REFMAJORAXIS
+      _b  = REFMINORAXIS
+      _c² = REFCOMPLECCENTRICITY²
+
       return new{F,T}(f, pointx, pointy, directionx, directiony, hmin, hmax, θmin, θmax,
-                      DFI, DFJ,n, DFDESCENDING, DFISLVL)
+                      DFI, DFJ,n, DFDESCENDING, DFISLVL,_a,_b, _c²)
     end
 end
 
@@ -108,7 +116,8 @@ __setθmin!(df, θmin)
 __setθmax!(df, θmax)
 end
 
-@inline __getinnerf(df::DistanceFunc{F,T}, x::T, y::T) where {F,T<:AbstractFloat} =  getfield(df, :__f)(x, y, MAJORAXIS(T), MINORAXIS(T), COMPLECCENTRICITY²(T))
+@inline __getinnerf(df::DistanceFunc{F,T}, x::T, y::T) where {F,T<:AbstractFloat} =  getfield(df, :__f)(x, y, getfield(df,:__a)[],
+getfield(df,:__b)[],getfield(df,:__c²)[])
 # Getters and Setters for DistanceFunc properties
 @forward Zbrent.f getpoint, getdirection, gethlims, getθlims
 @forward Zbrent.f __setpoint!, __setdirection!, __sethlims!, __setθlims!

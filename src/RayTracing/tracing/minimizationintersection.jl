@@ -54,7 +54,7 @@ end
 
 end
 
-@inline __innerfunc(z::Z, x::T,y::T) where {F,T,Z<:Zbrent{F,T}} = getfield(z.f, :__f)(x,y,MAJORAXIS(T),MINORAXIS(T),COMPLECCENTRICITY²(T))
+@inline __innerfunc(z::Z, x::T,y::T) where {F,T,Z<:Zbrent{F,T}} = getfield(z.f, :__f)(x,y,getfield(z.f,:__a)[],getfield(z.f,:__b)[],getfield(z.f,:__c²)[])
 
 
 
@@ -190,11 +190,13 @@ function solvenext!(iter::Int,zb::Z,
     ###########################################################
     # earth model parameters
     ###########################################################
-    a =MAJORAXIS(T) # major axis
-    a²=MAJORAXIS(T)*MAJORAXIS(T) # major axis squared
-    b²=MINORAXIS(T)*MINORAXIS(T) # minor axis squared
-    c²=COMPLECCENTRICITY²(T) # complement of the eccentricity squared
-    e² = ECCENTRICITY²(T) # eccentricity squared
+    a =getfield(zb.f,:__a)[] # major axis
+    b =getfield(zb.f,:__b)[] # minor axis
+    a²=a*a # major axis squared
+    b²=b*b # minor axis squared
+    c²=getfield(zb.f,:__c²)[] # complement of the eccentricity squared
+    e² = 1-c² # eccentricity squared
+
     ###########################################################
     tol= zb.tol # tolerance
     rx = getpointx(zb)
@@ -216,7 +218,6 @@ function solvenext!(iter::Int,zb::Z,
 
     # Try to find good condition for switching
     flag1= zb.b <zb.a
-    #flag2= abs(zb.a-zb.b)< tol
     # update the bracket if minimum found
     if flag1
       isdescending=!isdescending # reset to descending

@@ -82,7 +82,7 @@ end
     return distθmin < distθmax ? θmin : θmax
 end
 
-
+@inline difference_angles(θ1, θ2) = mod(θ1 - θ2 + 180, 360) - 180
 @inline function intersectionrayray(pointx1::T,pointy1::T, directionx1::T, directiony1::T,
                                     pointx2::T,pointy2::T, directionx2::T, directiony2::T) where T<:AbstractFloat
 

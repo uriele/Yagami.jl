@@ -16,7 +16,7 @@ using .YagamiCore: infologger
 using .MaterialProperties
 using Unitful: ustrip,uconvert,Pa,hPa,km
 using ..YagamiCore: numshort,textshort,numshortf
-
+using ..YagamiCore: REFMAJORAXIS,REFMINORAXIS,REFCOMPLECCENTRICITY²
 @reexport using ..MaterialProperties: Mathar160_240, Mathar075_141, Mathar043_052, Mathar028_042, Mathar013_025
 @reexport using ..MaterialProperties: Ciddor, Mathar, Carlotti, AirModel
 @reexport using ..MaterialProperties: refractive_index, refractive_index!
@@ -48,6 +48,7 @@ include("files/raytracingproblem.jl")
 
 include("tracing/snellslaw.jl")
 include("tracing/minimizationintersection.jl")
+include("tracing/thetaminimization.jl")
 
 include("viz/plots.jl")
 
@@ -93,6 +94,7 @@ export create_hlevelset, create_radii,create_atmosphere,grid_refractiveindex
 
 # Main functions for ray tracing
 export raytracing!, raytracing_parallel!
+export raytracingθ!, raytracingθ_parallel!
 
 export SimpleResult,AbstractResult
 
