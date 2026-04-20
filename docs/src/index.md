@@ -20,7 +20,7 @@ useful for scientific workflows:
 
 ## Package Map
 
-![Flowchart](./imgs/Yagami%20Flow-2026-04-20.png)
+![Flowchart](./imgs/Yagami-Flow-2026-04-20.png)
 
 ## Typical Workflow
 
