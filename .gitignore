@@ -8,6 +8,9 @@ __*.jl
 /Manifest*.toml
 /docs/Manifest*.toml
 /docs/build/
+/docs/internal/
+AGENTS.md
+.codex
 ciddor_results.csv
 /test/MaterialProperties/pythonscript/__pycache__
 /test/MaterialProperties/pythonscript/__pycache__
