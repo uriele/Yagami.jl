@@ -1,8 +1,8 @@
 using ..YagamiCore:difference_angles
 #initialize the solver
-@inline function solveinitθ!(zb::ZB,n_i::T,pointx::T,pointy::T,
-  directionx::T,directiony::T,hmin::T=zero(T)
-) where {F,T<:AbstractFloat,ZB<:Zbrent{F,T}}
+@inline function solveinitθ!(zb::Zbrent{F,T},n_i::T,pointx::T,pointy::T,
+  directionx::T,directiony::T,hmin::T=T(0)
+) where {F,T<:AbstractFloat}
   # Initialize the Zbrent structure
   hmax,_= __getinnerf(zb, pointx, pointy)
   __setpoint!(zb, pointx, pointy)
@@ -17,10 +17,10 @@ using ..YagamiCore:difference_angles
   # This must be set to avoid that the initial angle would be on the opposite side of the
   # Earth surface, forcing the minimum to the be on the wrong side of the Earth.
   θ₀= atand(pointy,pointx) #initial angle approximated to the position on a circle.
-  __setbracket!(zb, θ₀,0.0 , 0.0) # reset the bracket
+  __setbracket!(zb, θ₀, T(0), T(0)) # reset the bracket
 end
 
-@inline function newton_step!(zb::ZB) where {F,T<:AbstractFloat,ZB<:Zbrent{F,T}}
+@inline function newton_step!(zb::Zbrent{F,T}) where {F,T<:AbstractFloat}
     ###########################################################
     # earth model parameters
     ###########################################################
@@ -98,7 +98,7 @@ end
                  FPy*(d²Fydθ² - diry*d²t_dθ²)
 
         if abs(hstep) < eps(T) || isnan(hstep) || isnan(gstep)
-            @warn "Hessian ill-conditioned or NaN appeared at iteration $i with d²fdθ²: $d²fdθ², gstep: $gstep"
+            @warn "Hessian ill-conditioned or NaN appeared at iteration $i with hstep: $hstep, gstep: $gstep"
             break # Exit if Hessian is ill-conditioned or NaN appears
         end
 
@@ -120,7 +120,7 @@ end
 end
 
 
-@inline function newton_zero!(zb::ZB) where {F,T<:AbstractFloat,ZB<:Zbrent{F,T}}
+@inline function newton_zero!(zb::Zbrent{F,T}) where {F,T<:AbstractFloat}
     ###########################################################
     # earth model parameters
     ###########################################################
@@ -204,11 +204,11 @@ end
 
 end
 
-@inline function __update_rayθ!(zb::Z,len_t::T,θc::T,hk::T,pointx::T,pointy::T,
+@inline function __update_rayθ!(zb::Zbrent{F,T},len_t::T,θc::T,hk::T,pointx::T,pointy::T,
   directionx::T,directiony::T,
   hmin::T,hmax::T,θmin::T,θmax::T,
   i::Int,j::Int,n_i::T,isdescending::Bool,islevel::Bool
-) where {F,T<:AbstractFloat,Z<:Zbrent{F,T}}
+) where {F,T<:AbstractFloat}
   __setpoint!(zb, pointx, pointy) # set the new point position
   __setdirection!(zb, directionx, directiony) # set the new direction
   __sethlims!(zb, hmin, hmax) # set the new h limits
@@ -222,9 +222,9 @@ end
 end
 
 #inplace solve function
-function solvenextθ!(iter::Int,zb::Z,
+function solvenextθ!(iter::Int,zb::Zbrent{F,T},
   knots_h::Vh,knots_θ::Vθ,refractive_grid::MA
-)::Bool where {F,T<:AbstractFloat,Z<:Zbrent{F,T},
+)::Bool where {F,T<:AbstractFloat,
   Vh<:AbstractVector{T},Vθ<:AbstractVector{T},
   MA<:AbstractMatrix{T}
 }
@@ -382,14 +382,14 @@ end
 
 
 
-@inline function __solveθ!(res::A, zb::Z,
+@inline function __solveθ!(res::A, zb::Zbrent{F,T}  ,
   pointx::T,pointy::T,
   directionx::T,directiony::T,
   knots_h::Vh,knots_θ::Vθ,
   refractive_grid::MA
 ) where {F,T<:AbstractFloat,R<:AbstractResult{T},
   A<:AbstractVector{R},Vh<:AbstractVector{T},Vθ<:AbstractVector{T},
-  MA<:AbstractMatrix{T},Z<:Zbrent{F,T}
+  MA<:AbstractMatrix{T}
 }
 
   M= length(knots_h)-1

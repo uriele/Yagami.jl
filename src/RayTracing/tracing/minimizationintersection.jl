@@ -162,9 +162,9 @@ end
 
 
 #initialize the solver
-@inline function solveinit!(zb::ZB,n_i::T,pointx::T,pointy::T,
-  directionx::T,directiony::T,hmin::T=zero(T)
-) where {F,T<:AbstractFloat,ZB<:Zbrent{F,T}}
+@inline function solveinit!(zb::Zbrent{F,T},n_i::T,pointx::T,pointy::T,
+  directionx::T,directiony::T,hmin::T=T(0.0)
+) where {F,T<:AbstractFloat}
   # Initialize the Zbrent structure
   hmax,_= __getinnerf(zb, pointx, pointy)
   __setpoint!(zb, pointx, pointy)
@@ -176,13 +176,13 @@ end
   __setn!(zb, n_i) # set the refractive index
   __setislevel!(zb, true) # set to islevel
   __setdescending!(zb) # reset to descending
-  __setbracket!(zb, 0.0, 0.0, 0.0) # reset the bracket
+  __setbracket!(zb, T(0.0), T(0.0), T(0.0)) # reset the bracket
 end
 
 #inplace solve function
-function solvenext!(iter::Int,zb::Z,
+function solvenext!(iter::Int,zb::Zbrent{F,T},
   knots_h::Vh,knots_θ::Vθ,refractive_grid::MA
-)::Bool where {F,T<:AbstractFloat,Z<:Zbrent{F,T},
+)::Bool where {F,T<:AbstractFloat,
   Vh<:AbstractVector{T},Vθ<:AbstractVector{T},
   MA<:AbstractMatrix{T}
 }
@@ -214,7 +214,7 @@ function solvenext!(iter::Int,zb::Z,
     hmax = gethmax(zb) # maximum height
     N,M  = size(refractive_grid) # number of angles and heights
 
-    bracketmin(zb,zero(T))
+    bracketmin(zb,T(0))
 
     # Try to find good condition for switching
     flag1= zb.b <zb.a

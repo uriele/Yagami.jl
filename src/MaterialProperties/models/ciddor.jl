@@ -1,10 +1,12 @@
 
 # Interface for Ciddor's refractive index model
-refractive_index!(::Ciddor, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T},
-   wavelength::W=10.0, humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C} =
+function refractive_index!(::Ciddor, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T},
+   wavelength::W=T(10.0), humidity::H=T(0.0), CO2ppm::C=T(450.0)) where {T<:AbstractFloat,W,H,C} 
   ciddor_refractive_index!(n, temperature, pressure, wavelength, humidity, CO2ppm)
-refractive_index(::Ciddor, temperature::T, pressure::T, wavelength::T=10.0, humidity::T=0.0, CO2ppm::T=450.0) where T<:AbstractFloat =
-ciddor_refractive_index(temperature, pressure, wavelength, humidity, CO2ppm)
+end
+function refractive_index(::Ciddor, temperature::T, pressure::T, wavelength::T=T(10.0), humidity::T=T(0.0), CO2ppm::T=T(450.0)) where T<:AbstractFloat
+  ciddor_refractive_index(temperature, pressure, wavelength, humidity, CO2ppm)
+end
 
 
 
@@ -47,7 +49,7 @@ ciddor_refractive_index(temperature, pressure, wavelength, humidity, CO2ppm)
   end
 end
 
-ciddor_refractive_index(temperature::T, pressure::T, wavelength::W=10.0, humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C}  = __refractive_index_ciddor(temperature, pressure, wavelength, humidity, CO2ppm)
+ciddor_refractive_index(temperature::T, pressure::T, wavelength::T=T(10.0), humidity::T=T(0.0), CO2ppm::T=T(450.0)) where {T<:AbstractFloat}  = __refractive_index_ciddor(temperature, pressure, wavelength, humidity, CO2ppm)
 
 
 

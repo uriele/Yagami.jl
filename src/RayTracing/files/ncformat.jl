@@ -149,7 +149,7 @@ function NCRayTracingProblem(filename::String;
       knots_h=hᵢ)
 
 
-    refractive= grid_refractiveindex(atmosphere;model=Ciddor(),meantype=GeometricMean())
+    refractive= grid_refractiveindex(atmosphere;model=model,meantype=meantype)
     V=typeof(directionsx)
     M=typeof(refractive)
     T=eltype(directionsx)

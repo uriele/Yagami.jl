@@ -41,45 +41,60 @@ data structure used to store the results of ray tracing calculations and it is a
 - A `SimpleResult` object with the specified or default values.
 
 """
-SimpleResult(pointx::T=MAJORAXIS(), pointy::T=MINORAXIS(), directionx::T=0.0, directiony::T=-1.0,
-  altitude::T=zero(T), azimuth::T=zero(T), length::T=zero(T), i::Int=0, j::Int=0,descending::Bool=true) where {T<:AbstractFloat} =
+SimpleResult(::Type{T}=Float64) where T<:AbstractFloat = SimpleResult{T}(
+  MAJORAXIS(T),
+  MINORAXIS(T),
+  zero(T),
+  -one(T),
+  zero(T),
+  zero(T),
+  zero(T),
+  0,
+  0,
+  true,
+  true
+)
+
+SimpleResult(pointx::T, pointy::T, directionx::T, directiony::T,
+  altitude::T=T(0.0), azimuth::T=T(0.0), length::T=T(0.0), i::Int=0, j::Int=0,descending::Bool=true) where {T<:AbstractFloat} =
   SimpleResult{T}(pointx, pointy, directionx, directiony, altitude, azimuth, length, i, j,descending,true)
 
 
-  azimuthlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+azimuthlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
     isnothing(idx) && return results.azimuth[:,i]
     results.azimuth[1:idx-1,i]
-  end
-  altitudelocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+end
+altitudelocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
     isnothing(idx) && return results.altitude[:,i]
     results.altitude[1:idx-1,i]
-  end
-  pointxlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+end
+pointxlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
     isnothing(idx) && return results.pointx[:,i]
     results.pointx[1:idx-1,i]
-  end
-  pointylocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+end
+pointylocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
     isnothing(idx) && return results.pointy[:,i]
     results.pointy[1:idx-1,i]
-  end
+end
 
-  lengthlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+lengthlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
     isnothing(idx) && return results.length_t[:,i]
     results.length_t[1:idx-1,i]
-  end
+end
 
-  ilocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+ilocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
     isnothing(idx) && return results.i[:,i]
     results.i[1:idx-1,i]
-  end
-  jlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
+end
+
+jlocal(results::AR,i) where {AR<:AbstractMatrix{<:AbstractResult}} = begin
     idx= findfirst(results.length_t[:,i] .== 0)
     isnothing(idx) && return results.j[:,i]
     results.j[1:idx-1,i]
-  end
+end

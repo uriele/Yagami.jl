@@ -1,4 +1,4 @@
-using ..YagamiCore: file_to_array,vmr_to_namedtuple
+using .YagamiCore: file_to_array,vmr_to_namedtuple
 using Logging,LoggingExtras
 using Moshi.Match:@match
 using DocStringExtensions
@@ -186,7 +186,7 @@ function GeofitRayTracingProblem(folder::String;
     pressureᵢ=pressureᵢ,
     knots_θ=knots_θ,
     knots_h=knots_h)
-  refractive= grid_refractiveindex(atmosphere;model=Ciddor(),meantype=GeometricMean())
+  refractive= grid_refractiveindex(atmosphere;model=model,meantype=meantype)
 
   #####################################################################
   orbit,nscans,nlos=__read_orbit_file(joinpath(inp_folder, "orbit.dat"), logger)

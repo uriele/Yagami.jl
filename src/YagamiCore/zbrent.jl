@@ -39,7 +39,7 @@ Zbrent(::Type{<:T}=Float64; f::F,itermax::Int=100,tol::T=TOL) where {F,T<:Abstra
 
 
 # internal helper to set the bracket values
-@inline function __setbracket!(z::Z, a::T, x::T,b::T) where {F,T<:AbstractFloat,Z<:Zbrent{F,T}}
+@inline function __setbracket!(z::Zbrent{F,T}, a::T, x::T,b::T) where {F,T<:AbstractFloat}
   setfield!(z, :a, a)
   setfield!(z, :x, x)
   setfield!(z, :fx, z.f(x))
@@ -54,7 +54,7 @@ Find the minimum of the function `zb.f` using the Brent's method.
 The function `zb.f` must be defined such that it returns a value for a given input `x`.
 The method uses a combination of bisection, secant, and inverse quadratic interpolation to find the minimum.
 """
-function findraymin(zb::Z) where {F,T<:AbstractFloat,Z<:Zbrent{F,T}}
+function findraymin(zb::Zbrent{F,T}) where {F,T<:AbstractFloat}
     ax = zb.a
     bx = zb.x
     cx = zb.b
@@ -139,25 +139,29 @@ function findraymin(zb::Z) where {F,T<:AbstractFloat,Z<:Zbrent{F,T}}
 end
 
 """
-  bracketmin(z::Zbrent{F,T},min_val=0.0,multiplier=2.0) where {F,T<:AbstractFloat}
+  bracketmin(z::Zbrent{F,T},min_val::T,multiplier::T) where {F,T<:AbstractFloat}
 Bracket the function `z.f` to find a minimum. This function sets the initial bounds for the Brent's method.
 It uses the golden section search to find a point where the function value is lower than the initial bounds.
+
+- `z`: an instance of `Zbrent` containing the function and parameters for the search.
+- `min_val`: the minimum value to start the search from. (default is 0)
+- `multiplier`: a factor to determine how far to search for the next point. (default is 2)
 """
-function bracketmin(z::Z,min_val::T=zero(T),
-  multiplier::T=GLIMIT2
-  ) where {F,T<:AbstractFloat,Z<:Zbrent{F,T}}
-  # val initial point
-  ax=min_val  # initial lower bound
+function bracketmin(z::Zbrent{F,T},
+  minimum_value::T,
+  multiplier::T) where {F,T<:AbstractFloat}
+
+  ax = minimum_value
   fa = z.f(ax)
-  bx= ax+CGOLD*fa
+  bx = ax+T(CGOLD)*fa
   fu = zero(T)
   fb = z.f(bx)
-  # @info "ax: $ax, bx: $bx, fa: $fa, fb: $fb"
+  
   if fb>fa
     ax, bx = bx, ax  # swap if necessary
     fa, fb = fb, fa
   end
-  cx=bx+GOLDEN*(bx-ax)  # set cx
+  cx=bx+T(GOLDEN)*(bx-ax)  # set cx
   fc = z.f(cx)
 
   while (fb > fc)  # loop until we find a point with a lower function value
@@ -179,19 +183,19 @@ function bracketmin(z::Z,min_val::T=zero(T),
          __setbracket!(z, ax, bx, cx)  # update zbrent bounds
          return bx
       end
-      u=cx+ GOLDEN*(cx-bx)  # set u to the next point
+      u=cx+ T(GOLDEN)*(cx-bx)  # set u to the next point
       fu = z.f(u)  # evaluate function at u
     elseif ((cx-u)*(u-ulim) > 0)  # parabolic fit in the allowed range
       fu = z.f(u)  # evaluate function at u
       if (fu < fc)  # update bounds
-        bx, cx , u = cx, u, u+GOLDEN*(u-cx)  # update ax, bx, and u
+        bx, cx , u = cx, u, u+T(GOLDEN)*(u-cx)  # update ax, bx, and u
         fb, fc , fu = fc, fu, z.f(u)  # update fa, fb, and fu
       end
     elseif ((u-ulim)*(ulim-cx) >= 0)  # limit parabolic u
       u = ulim  # set u to ulim
       fu = z.f(u)  # evaluate function at u
     else  # reject parabolic
-      u= cx + GOLDEN*(cx-bx)  # set u to the next point
+      u= cx + T(GOLDEN)*(cx-bx)  # set u to the next point
       fu = z.f(u)  # evaluate function at u
     end
     ax, bx, cx = bx, cx, u  # update ax, bx, and cx
@@ -200,3 +204,6 @@ function bracketmin(z::Z,min_val::T=zero(T),
   __setbracket!(z, ax, bx, cx) # update zbrent bounds
   return bx
 end
+
+bracketmin(z::Zbrent{F,T},min_value::T) where {F,T<:AbstractFloat} = bracketmin(z, min_value, T(GLIMIT2))
+bracketmin(z::Zbrent{F,T}) where {F,T<:AbstractFloat} = bracketmin(z, T(0.0))

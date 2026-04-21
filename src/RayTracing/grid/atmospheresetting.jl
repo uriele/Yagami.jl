@@ -161,15 +161,16 @@ Create an atmosphere setting for ray tracing. This function generates an `Atmosp
   hᵢ::AbstractVector{T},
   temperatureᵢ::AbstractMatrix{T},
   pressureᵢ::AbstractMatrix{T},
-  humidity::T=0.0,
-  co2ppm::T=0.0,
-  wavelength::T=10.0,
-  knots_θ::AbstractVector{T}=create_hlevelset(),
-  knots_h::AbstractVector{T}=create_radii(),
-) where {T<:AbstractFloat}
+  humidity::H=0.0,
+  co2ppm::C=0.0,
+  wavelength::W=10.0,
+  knots_θ::AbstractVector{T}=T.(create_hlevelset()),
+  knots_h::AbstractVector{T}=T.(create_radii()),
+) where {T<:AbstractFloat,H,C,W}
 
   expr = Expr[]
   expr_loop = Expr[]
+
   # First create interpolation object
   push!(expr,:(atm=AtmosphereSetting(θᵢ,hᵢ,temperatureᵢ,pressureᵢ,humidity,co2ppm, wavelength)))
   push!(expr,:(temperature=similar(temperatureᵢ,length(knots_θ),length(knots_h))))
@@ -180,20 +181,20 @@ Create an atmosphere setting for ray tracing. This function generates an `Atmosp
   push!(expr_loop,:(pressure[i,j] = atm.pressure(knots_θ[i],knots_h[j]) ))
 
 
-  if humidity <: AbstractMatrix
+  if humidity <: AbstractMatrix{T}
     push!(expr,:(humidity = similar(temperatureᵢ,length(knots_θ), length(knots_h))))
     push!(expr_loop,:(humidity[i,j] = atm.humidity(knots_θ[i],knots_h[j]) ))
   elseif humidity <: AbstractFloat
-    push!(expr,:(humidity = humidity))
+    push!(expr,:(humidity = $T(humidity)))
   else
     throw(ArgumentError("humidity must be a AbstractFloat or AbstractMatrix but got $(typeof(humidity))."))
   end
 
-  if co2ppm <: AbstractMatrix
+  if co2ppm <: AbstractMatrix{T}
     push!(expr,:(co2ppm = similar(temperatureᵢ,length(knots_θ), length(knots_h))))
     push!(expr_loop,:(co2ppm[i,j] = atm.co2ppm(knots_θ[i],knots_h[j]) ))
   elseif co2ppm <: AbstractFloat
-    push!(expr,:(co2ppm = co2ppm))
+    push!(expr,:(co2ppm = $T(co2ppm)))
   else
     throw(ArgumentError("co2ppm must be a AbstractFloat or AbstractMatrix but got $(typeof(co2ppm))."))
   end
@@ -202,7 +203,7 @@ Create an atmosphere setting for ray tracing. This function generates an `Atmosp
     push!(expr,:(wavelength = similar(temperatureᵢ,length(knots_θ), length(knots_h))))
     push!(expr_loop,:(wavelength[i,j] = atm.wavelength(knots_θ[i],knots_h[j]) ))
   elseif wavelength <: AbstractFloat
-    push!(expr,:(wavelength = wavelength))
+    push!(expr,:(wavelength = $T(wavelength)))
   else
     throw(ArgumentError("wavelength must be a AbstractFloat or AbstractMatrix but got $(typeof(wavelength))."))
   end

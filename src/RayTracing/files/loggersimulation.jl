@@ -8,19 +8,19 @@ end
 
 # Forwarded methods for DebugLogger
 Logging.min_enabled_level(logger::DebugLogger) =
-    min_enabled_level(logger.logger)
+    Logging.min_enabled_level(logger.logger)
 
 Logging.shouldlog(logger::DebugLogger, level, mod, group, id) =
-    shouldlog(logger.logger, level, mod, group, id)
+    Logging.shouldlog(logger.logger, level, mod, group, id)
 
 Logging.handle_message(logger::DebugLogger, level, message, mod, group, id, file, line) =
-    handle_message(logger.logger, level, message, mod, group, id, file, line)
+    Logging.handle_message(logger.logger, level, message, mod, group, id, file, line)
 
 Logging.with_logger(f::Function, logger::DebugLogger) =
-    with_logger(f, logger.logger)
+    Logging.with_logger(f, logger.logger)
 
 Logging.global_logger(logger::DebugLogger) =
-    global_logger(logger.logger)
+    Logging.global_logger(logger.logger)
 
 function DebugLogger(filename::String)
   DebugLogger(infologger(filename))

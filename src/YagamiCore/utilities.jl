@@ -165,7 +165,7 @@ julia> file_to_array("data.txt", header=1, type=Float64, spacer=",")
 end
 
 
-@inline function vrm_to_namedtuple(file,header,type::Type{T}=Float64,spacer=" ") where T<:AbstractFloat  #find the number of pollutants using regex
+@inline function vmr_to_namedtuple(file,header,type::Type{T}=Float64,spacer=" ") where T<:AbstractFloat  #find the number of pollutants using regex
   open(file,"r") do io
     lines=readlines(io)[header+1:end] # skip header lines
     regex=Regex("^\\s{3,}[1-9][0-9]?\\s+([a-zA-Z0-9]+)")
@@ -193,6 +193,6 @@ end
       # get the lines between two indices and
       vmrs[pollutant[i]] = _convert_to_array(lines[idx[i]+1:idx[i+1]-1],spacer)
     end
-    (; (Symbol(k) => v for (k, v) in vrms)...)
+    (; (Symbol(k) => v for (k, v) in vmrs)...)
   end
 end

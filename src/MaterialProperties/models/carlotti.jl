@@ -1,16 +1,16 @@
 
 
 # Interface for Ciddor's refractive index model
-refractive_index!(::Carlotti, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T}, wavelength::W=10.0,
-humidity::H=0.0, CO2ppm::C=450.0) where {T<:AbstractFloat,W,H,C} =
+refractive_index!(::Carlotti, n::AbstractArray{T}, temperature::AbstractArray{T}, pressure::AbstractArray{T}, wavelength::W=T(10.0),
+humidity::H=T(0.0), CO2ppm::C=T(450.0)) where {T<:AbstractFloat,W,H,C} =
   carlotti_refractive_index!(n, temperature, pressure, wavelength, humidity, CO2ppm)
-refractive_index(::Carlotti, temperature::T, pressure::T, wavelength::T=10.0, humidity::T=0.0, CO2ppm::T=450.) where T<:AbstractFloat =
+refractive_index(::Carlotti, temperature::T, pressure::T, wavelength::T=10.0, humidity::T=T(0.0), CO2ppm::T=T(450.0)) where T<:AbstractFloat =
   carlotti_refractive_index(temperature, pressure, wavelength, humidity, CO2ppm)
 
 
 
 # Direct call to Carltti's refractive index model
-function carlotti_refractive_index!(n::A,temperature::A, pressure::A, wavelength::W=10.0, humidity::H=0.0, CO2ppm::C=450.) where {T<:AbstractFloat,A<:AbstractArray{T},W,H,C}
+function carlotti_refractive_index!(n::A,temperature::A, pressure::A, wavelength::W=T(10.0), humidity::H=T(0.0), CO2ppm::C=T(450.0)) where {T<:AbstractFloat,A<:AbstractArray{T},W,H,C}
   @simd for i in eachindex(n)
     @inbounds n[i] = __refractive_index_carlotti(temperature[i], pressure[i])
   end
