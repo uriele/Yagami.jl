@@ -250,5 +250,4 @@ Python scripts used to validate the material-property models are adapted from
 the [Refractive Index Database](https://github.com/polyanskiy/refractiveindex.info-database?tab=readme-ov-file)
 created by [Mikhail Polyanskiy](https://www.bnl.gov/staff/polyanskiy).[^1]
 
-[^1]: Polyanskiy, Mikhail N. ["Refractiveindex. info database of optical
-constants."](https://www.nature.com/articles/s41597-023-02898-2) Scientific Data 11.1 (2024): 94.02898-2
+[^1]: Polyanskiy, Mikhail N. ["Refractiveindex. info database of optical constants."](https://www.nature.com/articles/s41597-023-02898-2) Scientific Data 11.1 (2024): 94.02898-2
